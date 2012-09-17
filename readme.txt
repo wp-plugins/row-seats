@@ -6,8 +6,8 @@ Author URI: http://www.wpthemesforevents.com/row-seats-plugin
 Donate link: http://www.wpthemesforevents.com/donations
 Tags: row seats, booking seats, event booking, shows booking, event manager, booking events, sell seats, booking tickets, ticket booth, paypal booking
 Requires at least: 3.2
-Tested up to: 3.4
-Stable tag: 0.9
+Tested up to: 3.5
+Stable tag: 1.0
 
 Booking seats is easier with Row Seats plugin. This is a new solution to the increasing request to sell seats.
 
@@ -66,6 +66,12 @@ The shortcode will only work in a page or post named "Show".  When you activate 
 
 
 == Changelog ==
+
+= 1.0 =
+No page restriction (you can now post shortcode on any page/post)
+Seat orientation added (show seats numbers left/right or right/left)
+Minor improvements
+
 
 = 0.9 =
 * Initial release

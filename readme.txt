@@ -68,9 +68,9 @@ The shortcode will only work in a page or post named "Show".  When you activate 
 == Changelog ==
 
 = 1.0 =
-No page restriction (you can now post shortcode on any page/post)
-Seat orientation added (show seats numbers left/right or right/left)
-Minor improvements
+-No page restriction (you can now post shortcode on any page/post)
+-Seat orientation added (show seats numbers left/right or right/left)
+-Minor improvements
 
 
 = 0.9 =

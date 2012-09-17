@@ -33,7 +33,13 @@ function gsc_seats_operations($action,$finalseats,$showid)
                 $data = $finalseats[$i];
                 $name = $data['row'];
                 $seat_price = $data['price'];
+                if($seat_price==''){
+                    $seat_price = 0.00;
+                }
                 $discount_price = $data['price'];
+                  if($discount_price==''){
+                    $discount_price = 0.00;
+                }
                 $seats = ($data['seats']);
                 $total_seats_per_row = count($seats);
                 $seatno = 0;
@@ -42,6 +48,10 @@ function gsc_seats_operations($action,$finalseats,$showid)
                         
                         
                         $seattype = $seats[$j];
+                        if($seattype=='S'){
+                           
+                        }
+                       
                         if($seattype!=''){
                            $seatno++;  
                         }
@@ -99,7 +109,60 @@ function gsc_seats_operations($action,$finalseats,$showid)
 	        
     
 		break;
-         
+             case 'reverse':
+             
+	        $sql = "SELECT * FROM $wpdb->gsc_seats where show_id=". $showid." order by seatid ";
+           	$found = 0;
+            $data = Array();
+            if ($results = $wpdb->get_results($sql, ARRAY_A)) {
+		      
+            
+			foreach ($results as $value) {
+			 
+			$found++;
+            }
+            if($found==0){
+                return $data; 
+            }else{
+                $data = $wpdb->get_results($sql, ARRAY_A); 
+                $finaldata = array();
+                $reversed = array();
+                $initialrow = $data[0]['row_name'];
+                for($i=0;$i<count($data);$i++){
+                  
+                  if($initialrow==$data[$i]['row_name'] ){
+                    
+                    $finaldata[] = $data[$i];
+                    if($i==count($data)-1){
+                    $finaldata =   array_reverse($finaldata);
+                    for($j=0;$j<count($finaldata);$j++){
+                    $reversed[] = $finaldata[$j];
+                    }}
+                  
+                  }else{
+                  $finaldata =   array_reverse($finaldata);
+                   for($j=0;$j<count($finaldata);$j++){
+                    $reversed[] = $finaldata[$j];
+                  }
+                  
+                  $finaldata = array();
+                  $initialrow = $data[$i]['row_name'];
+                  $finaldata[] = $data[$i];
+                  }
+                    
+                    
+                }
+                
+            
+               return( $reversed); 
+            }
+           
+		  }
+           
+		  
+	        
+    
+		break;
         	case 'byid':
             
             $id = $data['vmid'];

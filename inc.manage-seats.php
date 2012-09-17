@@ -317,7 +317,7 @@ if($showname != ''){
 
 
 
-    <p><?php echo __('Below are list of shows where you can see the details. And the ShotCodes will work with only "Shows" page/post ', 'gsc'); ?></p>
+    <p><?php echo __('Below are list of shows where you can see the details. ', 'gsc'); ?></p>
 
 
 

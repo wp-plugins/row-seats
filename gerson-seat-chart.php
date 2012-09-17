@@ -12,7 +12,7 @@ Plugin URI: http://www.wpthemesforevents.com/row-seats-plugin
 
 Description: Booking seats is easier with Row Seats plugin.This is a new solution to the increasing request to sell seats.It features shopping cart features, calendar backend function, csv file upload of your seat details. It also handles special seating such as handicap accessability (availalabe in lite version). Just place the shortcode in a page or post  (automatically created page as "shows" when you activate) and sell your show.  It has paypal integration to accept payments [available in lite and premium version).
 
-Version: 0.9
+Version: 1.0
 
 Author: GC Development Team 
 
@@ -425,8 +425,9 @@ function gsc_ipncall($data){
 
             }
 
+            $txn_id = base64_encode('Free Version-'.$ticketno);
+           
             
-
              $ticket_seat_no = $ticketno.'-'.$rowname.$seats;
 
                 $sql="INSERT INTO $wpdb->booking_seats_relation (ticket_no,ticket_seat_no,booking_id,show_id,total_paid,txn_id,seat_cost) 
@@ -469,7 +470,7 @@ and bsr.booking_id =".$booking_id;
 
          $data = $booking_details;
 
-       sendgscmail($data);
+       sendgscmail($data,$txn_id);
 
         }
 
@@ -491,7 +492,7 @@ and bsr.booking_id =".$booking_id;
 
 
 
-function sendgscmail($data){
+function sendgscmail($data,$txn_id){
 
         $gsc_options = get_option(GSCPLN_OPTIONS);
 
@@ -499,8 +500,9 @@ function sendgscmail($data){
 
         $adminemailtemp = $gsc_options['gsc_adminetemp'];
 
-        $search = array("<username>","<showname>","<showdate>","<bookedseats>");
-
+        $search = array("<username>","<showname>","<showdate>","<bookedseats>","<downloadlink>");
+        $downloadlink = GSCTICKETDOWNURL.'?id='.$txn_id;
+        $dlink = 'Please click <a href="'.$downloadlink.'">here</a> to download your tickets';
         $adminsearch = array("<blogname>","<username>","<showname>","<showdate>","<bookedseats>","<availableseats>");
 
         $showid = $data[0]['show_id'];
@@ -527,7 +529,7 @@ function sendgscmail($data){
 
         }
 
-      $replace = array($username,$showname,$showdate,$seatdetails);
+      $replace = array($username,$showname,$showdate,$seatdetails,$dlink);
 
       $blogname = get_option('blogname');
 
@@ -1060,15 +1062,19 @@ Class name added by mahesh to below place order btn
 
  
 
-    $seats =  gsc_seats_operations('list','',$showid);
-
-           
+            
 
   //print_r($seats);
 
    $data = getshowbyid($showid);
 
-   
+    $showorder = $data[0]['orient'];
+ 
+   if($showorder==0){
+    $seats =  gsc_seats_operations('list','',$showid);
+   }else{
+     $seats =  gsc_seats_operations('reverse','',$showid);
+   }
 
     $divwidth = (($seats[0]['total_seats_per_row'])+2)*22;
 
@@ -1398,11 +1404,16 @@ $symbols = array(
 
    
 
-    $seats =  gsc_seats_operations('list','',$showid);
-
-  
 
    $data = getshowbyid($showid);
+   $showorder = $data[0]['orient'];
+ 
+   if($showorder==0){
+    $seats =  gsc_seats_operations('list','',$showid);
+   }else{
+     $seats =  gsc_seats_operations('reverse','',$showid);
+   }
+
 
    
 
@@ -1597,10 +1608,7 @@ function curPageURL() {
 }
 
 function gettheseatchat($showid){
-    $slug = basename(get_permalink());
 
- if($slug =='shows'){
-    
 
 
    $currenturl = curPageURL();
@@ -2518,9 +2526,7 @@ function deleteitem(obj){
    return $html.'</div>';
 
 }
-}else{
-    echo 'This will work with only shows page or post!..';
-}
+
 }
 
 function gettheadminseatchat($showid){
@@ -2543,13 +2549,17 @@ function gettheadminseatchat($showid){
 
    
 
-    $seats =  gsc_seats_operations('list','',$showid);
-
+    
 
 
    $data = getshowbyid($showid);
-
-   
+    $showorder = $data[0]['orient'];
+ 
+   if($showorder==0){
+    $seats =  gsc_seats_operations('list','',$showid);
+   }else{
+     $seats =  gsc_seats_operations('reverse','',$showid);
+   }
 
     $divwidth = (($seats[0]['total_seats_per_row'])+2)*22;
 

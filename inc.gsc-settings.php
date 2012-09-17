@@ -97,12 +97,13 @@ phone: (818) 555-5555<br/>
                 <input type="text" id="gsc_release_min" name="gsc_release_min" class="regular-text" value="<?php echo $gsc_options['gsc_release_min']; ?>"/>
                </td>
             </tr>
-            <tr valign="top" style="display: none;">
+            <tr valign="top" >
                 <th scope="row"><label for="name"><?php echo __('Select theme', 'gsc'); ?><span style="color: red;">*</span></label>
                 </th>
                 <td>
                 <select name="gsc_theme" id="gsc_theme">
                 <option value="lite.css" <?php  if($gsc_options['gsc_theme']=='lite.css')echo 'selected';?>>Lite</option>
+                <option value="lite_pink.css" <?php  if($gsc_options['gsc_theme']=='lite_pink.css')echo 'selected';?>>Pink</option>
                
                  </select>
                 </td>

@@ -66,6 +66,7 @@ function gsc_create_tables()
       venue text NOT NULL,  
       allday  tinyint(1) NOT NULL,
       status varchar(50)NOT NULL,
+      orient varchar(1)NOT NULL,
       created_date datetime NULL,
       mod_date datetime NULL,
 	  mod_by  varchar(255) NOT NULL,

@@ -108,6 +108,7 @@ var GSCAJAXURL = '<?php echo GSCAJAXURL?>';
          var titleField = $dialogContent.find("input[name='title']").val(event.title);
 
          var bodyField = $dialogContent.find("textarea[name='body']").val(event.body);
+ var orient = $dialogContent.find("select[name='orient']").val(event.orient);;
 
 
 
@@ -144,13 +145,14 @@ var GSCAJAXURL = '<?php echo GSCAJAXURL?>';
                   event.title = titleField.val();
 
                   event.body = bodyField.val();
+                   event.orient = orient.val();
 
                   event.allday = allday;
 
                   calendar.fullCalendar("updateEvent", event);
-  var startdate = jQuery.fullCalendar.formatDate(event.start, "yyyy-MM-dd hh:mm:sm");
-            var enddate = jQuery.fullCalendar.formatDate(event.end, "yyyy-MM-dd hh:mm:sm");
-          
+     var startdate = jQuery.fullCalendar.formatDate(event.start, "yyyy-MM-dd H:mm:sm");
+            var enddate = jQuery.fullCalendar.formatDate(event.end, "yyyy-MM-dd H:mm:sm");
+       
                                jQuery.post(GSCAJAXURL,
 
           { 
@@ -166,7 +168,7 @@ var GSCAJAXURL = '<?php echo GSCAJAXURL?>';
             'title':titleField.val(),
 
             'allday': allday,
-
+            'orient':orient.val(),
             'status':'empty' 
 
           },function( data ) {
@@ -260,7 +262,7 @@ var GSCAJAXURL = '<?php echo GSCAJAXURL?>';
          var titleField = $dialogContent.find("input[name='title']");
 
          var bodyField = $dialogContent.find("textarea[name='body']");
-
+       var orient = $dialogContent.find("select[name='orient']");
 
 
 
@@ -296,7 +298,7 @@ var GSCAJAXURL = '<?php echo GSCAJAXURL?>';
                   title = titleField.val();
 
                   body = bodyField.val();
-
+                    orient = orient.val();
                    if (title) {
 
                     eventid = '';
@@ -316,7 +318,7 @@ var GSCAJAXURL = '<?php echo GSCAJAXURL?>';
             title:titleField.val(), 
 
             allday:allday, 
-
+            orient:orient,
             status:'empty' 
 
                              
@@ -342,7 +344,7 @@ var GSCAJAXURL = '<?php echo GSCAJAXURL?>';
                                 end: end,
 
                                 body:body,
-
+                                orient:orient,
                                 allDay: allDay
 
                                 
@@ -466,7 +468,14 @@ var GSCAJAXURL = '<?php echo GSCAJAXURL?>';
 					<label for="title">Show Name: </label><input type="text" name="title" size="20"/>
 
 				</li>
+	               <li>
 
+					<label for="title">Orientation: </label><select name="orient" id="orient">
+                    <option value="0">Left-to-Right</option>
+                    <option value="1">Right-to-LEft</option>
+                    </select>
+
+				</li>
 				<li>
 
 					<label for="body">Venue: </label><textarea name="body" cols="40" rows="10"></textarea>

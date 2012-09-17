@@ -313,7 +313,7 @@ ul.r li.s:hover {
 #stageshow{
      background-image: url("../images/stage.png") !important;
     
-    height: 42px !important !important;
+    height: 42px !important ;
     padding: 10px !important;
     
 }

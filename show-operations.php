@@ -294,11 +294,12 @@ return mysql_insert_id();
                 $curdate = date( 'Y-m-d H:i:s');
                 $showdate  = date('Y-m-d H:i:s', strtotime($showstart));
                 $allday  = $data['allday'];
+                $orient  = $data['orient'];
 
               	
                 if(($name==''))
                 return 'Please fill all the fields';
-                $wpdb->query("INSERT INTO $wpdb->gsc_shows (show_name,show_start_time,show_end_time,show_date,venue,allday,status,created_date,mod_date,mod_by) VALUES ('$name', '$showstart', '$showend','$showdate','$venue',$allday,'$status','$curdate','$curdate','$modby')");
+                $wpdb->query("INSERT INTO $wpdb->gsc_shows (show_name,show_start_time,show_end_time,show_date,venue,allday,status,orient,created_date,mod_date,mod_by) VALUES ('$name', '$showstart', '$showend','$showdate','$venue',$allday,'$status','$orient','$curdate','$curdate','$modby')");
 		     return mysql_insert_id();
              
            
@@ -314,8 +315,10 @@ return mysql_insert_id();
                 $curdate = date( 'Y-m-d H:i:s');
                 $showdate  = date('Y-m-d H:i:s', strtotime($showstart));
                  $allday  = $data['allday'];
+                  $orient  = $data['orient'];
+
                 $id = $data['id'];
-      	$wpdb->query("UPDATE  $wpdb->gsc_shows SET show_name='$name',show_start_time='$showstart',show_end_time='$showend',show_date='$showdate',venue='$venue',allday=$allday,status='',mod_date='$curdate',mod_by='$modby' WHERE id=".$id);
+      	$wpdb->query("UPDATE  $wpdb->gsc_shows SET show_name='$name',show_start_time='$showstart',show_end_time='$showend',show_date='$showdate',venue='$venue',allday=$allday,orient='$orient',mod_date='$curdate',mod_by='$modby' WHERE id=".$id);
         return '<div class="updated"><p><strong>Testimonial Updated..</strong></p></div>';
    
     case 'updatestatus':

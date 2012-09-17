@@ -1,0 +1,18 @@
+,"Legend: Y= Available,B=block",,,,,,,,,
+,"Row #  ex. [A, B, C, etc]",,,,,,,,,
+,"Seat # ex [1, 2, 3, 4, etc]",,,,,,,,,
+Price,10.5,11.5,5,5,6,7,8,8,8,8
+,ROW,ROW,ROW,ROW,ROW,ROW,ROW,ROW,ROW,ROW
+SEAT #,A,B,C,D,E,F,G,H,I,J
+1,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+2,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+3,,,,,,,,,,
+4,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+5,B,B,B,Y,Y,Y,Y,Y,Y,Y
+6,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+7,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+8,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+9,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+10,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+11,,,,,,,,,,
+12,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y

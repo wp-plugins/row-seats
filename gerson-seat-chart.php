@@ -1086,7 +1086,7 @@ Class name added by mahesh to below place order btn
 
 
 
-        $html.=  '<div id="currentcart" style="float:left;">
+        $html.=  '<div id="currentcart" style="margin-right: auto; margin-left: auto;">
 
 
 
@@ -1314,7 +1314,7 @@ Class name added by mahesh to below place order btn
 
 
 
-      $html.= '</div><div id="gap" style="clear:both;float:left;">&nbsp;</div><div class="cartitems" style="width:'.$divwidth.'px;"><div class="cart-hdng"aligh="center"><strong>Items in Cart</strong></div><table style="color:#51020b;">';
+      $html.= '</div><div id="gap" style="clear:both;float:left;">&nbsp;</div><div class="cartitems" style="width:'.$divwidth.'px; min-width: 300px;"><div class="cart-hdng"aligh="center"><strong>Items in Cart</strong></div><table style="color:#51020b;">';
 
 
 
@@ -1742,7 +1742,7 @@ Venue:$venue<br/>
 
 </div>";
 
-$html.= "<div id='showprview' align='center' style='max-width: 689px; -moz-user-select: none;margin-left: auto;margin-right: auto;' >";
+$html.= "<div id='showprview' align='center' style=' -moz-user-select: none;margin-left: auto;margin-right: auto;' >";
 
 
 

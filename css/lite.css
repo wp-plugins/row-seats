@@ -763,18 +763,20 @@ div#container{
   color:#000;
 
 }
-/**Margin changed by mahesh*/
+
 .stage-hdng{
 
    background: url("../images/stage.png") no-repeat scroll center top transparent !important;
 
-    float: left !important;
+    margin-right: auto;
+    
+    margin-left: auto;
 
     height: 60px !important;
 
     width: 600px !important;
 
-    margin:0 0 25px -23px !important;
+    margin:0 0 25px -9px !important;
 
 }
 

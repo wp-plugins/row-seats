@@ -47,9 +47,9 @@ a) Month view - When you create and save a show in this view, it is considered f
 b) Week view - You can set the time start/end of your event for any particular day.
 c) Day view - same as week view above.
 
-3. Each show created in the Show Calendar it will post in the Manage Seat section. In this menu, you need to click on the event that you want to Add Seats. Once clicked, you need to download the CSV template. Fill it out and then upload it and that's it. Your show is created. For more detail information on how to form your show go to http://www.wpthemesforevents.com/row-seats-plugin.
+2. Each show created in the Show Calendar it will post in the Manage Seat section. In this menu, you need to click on the event that you want to Add Seats. Once clicked, you need to download the CSV template. Fill it out and then upload it and that's it. Your show is created. For more detail information on how to form your show go to http://www.wpthemesforevents.com/row-seats-plugin.
 
-4. Reports Menu will present the details of the transaction made by the users who booked tickets.
+3. Reports Menu will present the details of the transaction made by the users who booked tickets.
 
 = My page or post doesn't show up the show/event, what do I do? =
 
@@ -68,9 +68,11 @@ The shortcode will only work in a page or post named "Show".  When you activate 
 == Changelog ==
 
 = 1.0 =
--No page restriction (you can now post shortcode on any page/post)
--Seat orientation added (show seats numbers left/right or right/left)
--Minor improvements
+*No page restriction (you can now post shortcode on any page/post)
+
+*Seat orientation added (show seats numbers left/right or right/left)
+
+*Minor improvements
 
 
 = 0.9 =

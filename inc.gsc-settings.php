@@ -103,7 +103,7 @@ phone: (818) 555-5555<br/>
                 <td>
                 <select name="gsc_theme" id="gsc_theme">
                 <option value="lite.css" <?php  if($gsc_options['gsc_theme']=='lite.css')echo 'selected';?>>Lite</option>
-                <option value="lite_pink.css" <?php  if($gsc_options['gsc_theme']=='lite_pink.css')echo 'selected';?>>Pink</option>
+                <option value="dark.css" <?php  if($gsc_options['gsc_theme']=='dark.css')echo 'selected';?>>Dark</option>
                
                  </select>
                 </td>

@@ -701,9 +701,7 @@ ul.r li.s:hover {
 /*changed by mahesh 20120512*/
 #showprview{
 
-width:auto !important;
-
-float:left !important;
+width:100% !important;
 
 font-family: arial, verdana, sans-serif ;
 
@@ -711,9 +709,9 @@ line-height:18px !important;
 
 font-size:12px !important;
 
-padding:15px 0 15px 15px !important;
+padding:15px 0 15px 0px !important;
 
-
+clear: both;
 
 text-align: none !importnat;
 
@@ -767,13 +765,15 @@ div#container{
 
    background: url("../images/stagedark.png") no-repeat scroll center top transparent !important;
 
-    float: left !important;
+    margin-right: auto;
+    
+    margin-left: auto;
 
     height: 60px !important;
 
     width: 600px !important;
 
-    margin:0 0 25px 0 !important;
+    margin:0 0 25px -9px !important;
 
 }
 
@@ -795,14 +795,15 @@ div#container{
 
     color: #FFFFFF !important;
 
-    font-size: 14px !important;
+ border-bottom:solid 1px black !important;
 
     height: 30px !important;
 
     line-height: 30px !important;
 
-}
+ font-size:14px !important;
 
+}  
 .deleteitem{
 
 border:none !important;
@@ -1485,8 +1486,6 @@ border-left:1px solid #e7e7e7;
 
     width: 100%;
 
-    padding: 4px 0 !important
-
 }
 
 .gpBdrRight .carttotclass{
@@ -1567,7 +1566,7 @@ border-left:1px solid #e7e7e7;
 
    background: -o-linear-gradient(top, #050505, #656566)!important;
 
-   padding: 5px 16px !important;
+   padding: 5px 10px !important;
 
    -webkit-border-radius: 5px !important;
 
@@ -1593,7 +1592,9 @@ border-left:1px solid #e7e7e7;
 
    vertical-align: middle;
 
-   margin:0 5px !important;
+   margin-left:5px !important;
+
+    margin-top:2px !important;
 
    }
 
@@ -1680,3 +1681,11 @@ border-left:1px solid #e7e7e7;
    background: #1b435e !important;
 
    }
+      /*Class added by mahesh for place order btn 20120511*/
+.srbutton_css {
+    
+    margin: 0 0 12px !important;
+    
+    float: left !important;
+    
+} 

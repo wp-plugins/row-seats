@@ -1,0 +1,268 @@
+
+/*---popup styles starts here ----- */
+	.popupGrayBg {
+		position:fixed;
+		width:100%;
+		height:100%;
+		background:black;
+		z-index:1001;
+		left:0;
+		top:0;
+		opacity:.5;
+		filter:progid:DXImageTransform.Microsoft.Alpha(Opacity=50);
+		}
+	.QTPopupCntnr {
+		width:750px;
+		position:absolute;
+		z-index:1200;
+		background:gray;
+		left:50%;
+        color:black !important;
+		margin-left:-344px;
+		margin-top:150px;
+		}
+	.gpBdrLeftTop {
+		width:6px;
+		height:6px;
+		background:url(../images/greenPopupBdr.png) left top no-repeat;
+		float:left;
+        display:none;
+		}
+	.gpBdrRightTop {
+		width:6px;
+		height:6px;
+		background:url(../images/greenPopupBdr.png) right top no-repeat;
+		float:right;
+                display:none;
+		}
+	.gpBdrTop {
+		height:3px;
+		background:#a9b6e1;
+		border-top:3px solid #3b4f91;
+		margin-left:6px;
+		margin-right:6px;
+                display:none;
+		}
+	.gpBdrLeft {
+		border:3px solid #3B4F91;
+		background:#fff;
+		}
+	.gpBdrRight {
+		border-right:none;
+		background:#fff;
+		height:auto;
+		position:relative;
+	}
+	.gpBdrLeftBottom {
+		width:6px;
+		height:6px;
+		background:url(../images/greenPopupBdr.png) left bottom no-repeat;
+		float:left;
+                   display:none;
+		}
+	.gpBdrRightBottom {
+		width:6px;
+		height:6px;
+		background:url(../images/greenPopupBdr.png) right bottom no-repeat;
+		float:right;
+                display:none;
+		}
+	.gpBdrBottom {
+		height:3px;
+		background:#fff;
+		border-bottom:3px solid #3b4f91;
+		margin-left:6px;
+		margin-right:6px;
+        display:none;
+		}
+	.gpBdrRight .caption {
+		background:#a9b6e1;
+		line-height:38px;
+		padding-left:10px;
+		font-family:Arial, Helvetica, sans-serif;
+		font-size:15px;
+		font-weight:bold;
+		color:#3b4f91;
+		}
+	.gpBdrRight .closeBtn {
+		background:red;
+		width:31px;
+		height:31px;
+		position:absolute;
+		right:-15px;
+		top:-15px;
+		background:url(../images/grn_pp_cls_btn_normal.png) no-repeat;
+
+		}
+	.gpBdrRight .closeBtn:hover {
+		background:url(../images/grn_pp_cls_btn_over.png) no-repeat;
+		}
+
+	.gpBdrRight .checkoutcontent {
+        background: none repeat scroll 0 0 transparent;
+    font-weight: normal;
+    position: relative;
+    width: 100%;
+		}
+        .gpBdrRight .checkoutcontent table{
+          border:none !important;
+          /*background:#000;*/
+        }
+.gpBdrRight .checkoutcontent table{
+  border: none !important;
+  margin:0 !important;
+    padding:0 !important;
+}
+.gpBdrRight .checkoutcontent tr{
+  border: none !important;
+}
+.gpBdrRight .checkoutcontent td{
+  border: none !important;
+   padding:5px 10px 0px 10px !important; 
+}
+.gpBdrRight .checkoutcontent tbody{
+  border: none !important;
+}
+.gpBdrRight label{
+  float: left!important;
+  padding:0 10px 0 0!important;
+  width:50px !important;
+  margin:0 !important;
+}
+   .gpBdrRight input{
+     margin:0 !important;
+   }
+
+.gpBdrRight input[type="text"], .gpBdrRight input[type="password"], .gpBdrRight textarea {
+   background: none repeat scroll 0 0 #FAFAFA !important;
+    border: 1px solid #DDDDDD !important;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1) inset !important;
+    color: #888888 !important;
+    float: left ;
+    width: 250px;
+    margin:0 !important;
+    padding:5px !important;
+      font-size: 12px !important;
+    line-height: 18px !important;
+}
+.gpBdrRight input[type="text"]:focus, .gpBdrRight textarea:focus {
+    color: #373737;
+}
+.gpBdrRight .termsclass{
+
+width:auto !important;
+}
+.tabright{
+border-left:1px solid #e7e7e7;
+}
+
+.gpBdrRight .couponclass{
+  border: 1px solid black !important;
+    clear: both;
+    display: block;
+    float: left;
+    margin: 3px 0 3px 0 !important;
+    width: 130px !important;
+
+}
+
+.gpBdrRight .couponbtn{
+   clear: both !important;
+    display: block !important;
+    float: left !important;
+    margin: 10px 0 0 !important;
+    background:url(../images/apply-coupon.png) no-repeat !important;
+    width:145px !important;
+    height:27px !important;
+}
+.gpBdrRight .placeorderbtn{
+ clear: both !important;
+    display: block !important;
+    float: left !important;
+    margin: -5px 0 0 -5px !important;
+     background:url(../images/place-order.png) no-repeat !important;
+    width:145px !important;
+    height:34px !important;
+}
+
+.gpBdrRight .place-coupon{
+ color: #51020B;
+    float: left;
+    font-size: 14px;
+    font-weight: bold;
+    width: 100%;
+    padding: 4px 0 !important
+}
+.gpBdrRight .carttotclass{
+   border-top:1px solid #e7e7e7;
+
+}
+.gpBdrRight .carttotclass span{
+ font-weight:bold;
+
+}
+.gpBdrRight #couponmsg{
+ float: left;
+  
+    padding: 0 7px 0 10px;
+    color:#ff0000 !important;
+    width:175px;
+}
+.entry img{
+  margin:0 !important;
+  padding:0 !important;
+}
+.showchart{
+  width:100%;
+  float:left;
+}
+
+#eventdetails{
+    padding:10px 0px 10px !important;
+    /*color: #ffffff;*/
+    font-size: 13px;
+    padding: 10px 0 !important;
+}
+/*---popup styles ends here ----- */
+
+
+
+.srbutton {
+    border-top: 1px solid #000000 !important;
+    background: #2d5c02 !important;
+    background: -webkit-gradient(linear, left top, left bottom, from(#527a07), to(#2d5c02)) !important;
+    background: -webkit-linear-gradient(top, #527a07, #2d5c02) !important;
+    background: -moz-linear-gradient(top, #527a07, #2d5c02) !important;
+    background: -ms-linear-gradient(top, #527a07, #2d5c02) !important;
+    background: -o-linear-gradient(top, #527a07, #2d5c02) !important;
+    padding: 5px 16px !important;
+    -webkit-border-radius: 5px !important;
+    -moz-border-radius: 5px !important;
+    border-radius: 5px !important;
+    -webkit-box-shadow: rgba(0,0,0,1) 0 1px 0 !important;
+    -moz-box-shadow: rgba(0,0,0,1) 0 1px 0 !important;
+    box-shadow: rgba(0,0,0,1) 0 1px 0 !important;
+    text-shadow: rgba(0,0,0,.4) 0 1px 0 !important;
+    color: white !important;
+    font-size: 14px !important;
+    font-family: Verdana,Arial,Helvetica,sans-serif !important;
+    margin: 0 !important;
+    text-decoration: none !important;
+    vertical-align: super !important;
+}
+
+.srbutton-css {
+    float: left !important;
+    margin-bottom: 20px !important;
+
+}
+
+.srbutton:hover {
+    border-top-color: #332f33 !important;
+    background: #332f33 !important;
+    color: #ccc !important;
+}
+.srbutton:active {
+    border-top-color: #1b435e !important;
+    background: #1b435e !important;
+}

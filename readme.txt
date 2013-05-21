@@ -1,19 +1,19 @@
 === Plugin Name ===
 Plugin Name: Row Seats
-Plugin URI: http://www.wpthemesforevents.com/row-seats-plugin
+Plugin URI: http://www.rowseatsplugin.com/row-seats-plugin-information
 Author: gcwebsolutions
-Author URI: http://www.wpthemesforevents.com/row-seats-plugin
-Donate link: http://www.wpthemesforevents.com/donations
+Author URI: http://www.rowseatsplugin.com/row-seats-plugin-information
+Donate link: http://www.rowseatsplugin.com/row-seats-plugin-information
 Tags: row seats, booking seats, event booking, shows booking, event manager, booking events, sell seats, booking tickets, ticket booth, paypal booking
 Requires at least: 3.2
-Tested up to: 3.5
-Stable tag: 1.0
+Tested up to: 3.6
+Stable tag: 2.0
 
 Booking seats is easier with Row Seats plugin. This is a new solution to the increasing request to sell seats.
 
 == Description ==
 
-Booking seats is easier with Row Seats plugin. This is a new solution to the increasing request to sell seats. It features shopping cart features, calendar backend function, csv file upload of your seat details. Just place the shortcode in a page or post (named "shows") and sell your show. For more more information or extra features and functions, you can visit <a href="http://www.wpthemesforevents.com/row-seats-plugin">plugin page</a>.
+Booking seats is easier with Row Seats plugin. This is a new solution to the increasing request to sell seats. It features shopping cart features, calendar backend function, csv file upload of your seat details. Just place the shortcode in a page or post and sell your show. For more more information or extra features and functions, you can visit <a href="http://www.rowseatsplugin.com/row-seats-plugin-information">plugin page</a>.
 
 == Installation ==
 
@@ -33,7 +33,7 @@ There are two ways of installing the plugin:
 
 2. Download it and then activate it.
 
-Also You can find simple tutorials with video by following the link (http://www.wpthemesforevents.com/row-seats-plugin)
+Also You can find simple tutorials with video by following the link (http://www.rowseatsplugin.com/row-seats-plugin-information)
 
 == Frequently Asked Questions ==
 
@@ -47,13 +47,13 @@ a) Month view - When you create and save a show in this view, it is considered f
 b) Week view - You can set the time start/end of your event for any particular day.
 c) Day view - same as week view above.
 
-2. Each show created in the Show Calendar it will post in the Manage Seat section. In this menu, you need to click on the event that you want to Add Seats. Once clicked, you need to download the CSV template. Fill it out and then upload it and that's it. Your show is created. For more detail information on how to form your show go to http://www.wpthemesforevents.com/row-seats-plugin.
+2. Each show created in the Show Calendar it will post in the Manage Seat section. In this menu, you need to click on the event that you want to Add Seats. Once clicked, you need to download the CSV template that will provide a sample on how to create your seat chart. Fill it out and then upload it and that's it. Your show is created. For more detail information on how to form your show go to http://www.rowseatsplugin.com/row-seats-plugin-information.
 
 3. Reports Menu will present the details of the transaction made by the users who booked tickets.
 
 = My page or post doesn't show up the show/event, what do I do? =
 
-The shortcode will only work in a page or post named "Show".  When you activate the plugin, it will automatically create the page "show" for you.  When you do your first show the shortcode is also created and appears in that page "show".
+The shortcode will work in any page or post. You can obtain the shortcode after you upload your seating chart (CSV file).  Make sure that the shortcode starts with [showseats id=X] (X represents the id number).
 
 == Screenshots ==
 
@@ -67,12 +67,19 @@ The shortcode will only work in a page or post named "Show".  When you activate 
 
 == Changelog ==
 
+= 2.0 =
+* New Core build.  You can add functional add-ons available, <a title="Row Seats add-ons" href="https://www.rowseatsplugin.com/products" target="_blank">click here</a>
+* Code cleaned up
+* Restructured with new db tables
+* Comes with 5 color themes
+* Polished look
+* Can work in an page or post (full width recommended)
+* Improvements in overall functions
+
 = 1.0 =
-*No page restriction (you can now post shortcode on any page/post)
-
-*Seat orientation added (show seats numbers left/right or right/left)
-
-*Minor improvements
+* No page restriction (you can now post shortcode on any page/post)
+* Seat orientation added (show seats numbers left/right or right/left)
+* Minor improvements
 
 
 = 0.9 =

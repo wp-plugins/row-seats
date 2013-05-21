@@ -4,6 +4,21 @@ if (!function_exists('add_action') ) {
     if(!current_user_can('administrator')) {
         die('Permission Denied!...');
     }
+     if(isset($_GET['f'])&& $_GET['f']=='bookingreport'){
+
+        RowSeatsBookingtocsv($_GET['filter'],$_GET['from'],$_GET['to']);
+        die;
+    }
+    if(isset($_GET['f'])&& $_GET['f']=='memberbookingreport'){
+
+        RowSeatsMemberBookingtocsv($_GET['filter'],$_GET['from'],$_GET['to']);
+        die;
+    }
+    if(isset($_GET['f'])&& $_GET['f']=='memberslist'){
+
+        RowSeatsMembersListToCsv($_GET['filter'],$_GET['from'],$_GET['to']);
+        die;
+    }
 }
 ###############################################################
 # File Download 1.31
@@ -24,13 +39,13 @@ define('ALLOWED_REFERRER', '');
 
 // Download folder, i.e. folder where you keep all files for download.
 // MUST end with slash (i.e. "/" )
-define('BASE_DIR',GSCPLN_DIR);
+define('BASE_DIR',RSTPLN_DIR);
 
 // log downloads?  true/false
 define('LOG_DOWNLOADS',true);
 
 // log file name
-define('LOG_FILE','downloads.log');
+
 
 // Allowed extensions list in format 'extension' => 'mime type'
 // If myme type is set to empty string then script will try to detect mime type 
@@ -200,10 +215,6 @@ if ($file) {
 // log downloads
 if (!LOG_DOWNLOADS) die();
 
-$f = @fopen(LOG_FILE, 'a+');
-if ($f) {
-  @fputs($f, date("m.d.Y g:ia")."  ".$_SERVER['REMOTE_ADDR']."  ".$fname."\n");
-  @fclose($f);
-}
+
 
 ?>

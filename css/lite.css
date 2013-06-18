@@ -431,7 +431,7 @@ ul.r li.z {
 }
 
 #showprview{
-width:642px !important; 
+width:100% !important;
 float:left !important;
 font-family: arial, verdana, sans-serif ;
 line-height:18px !important;
@@ -463,15 +463,15 @@ div#container{
 .show-text{
   float:left !important;
   padding:0 20px 0 0 !important;
-  color:#000;
+  color:#fff;
 }
 /*changed by mahesh 20120512*/
-.stage-hdng{
+//.stage-hdng{
    background: url("../images/stage.png") no-repeat scroll center top transparent !important;
     /*float: left !important;*/
     height: 60px !important;
-    width: 800px !important;
-    margin:0 0 65px -3px !important;
+    width: 600px !important;
+    margin:0 0 25px -3px !important;
 }
 .cartitems{
   clear:both !important;
@@ -940,7 +940,7 @@ div.content-home img {
     margin-right: 1px !important;
 }
 .singular .entry-header, .singular .entry-content, .singular footer.entry-meta, .singular #comments-title {
-    width: 642px !important;
+    width: 100% !important;
 }
 
 @Media all and (min-width:0) {

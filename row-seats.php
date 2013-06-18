@@ -7,7 +7,7 @@ if (!session_id())
 Plugin Name: Row Seats Core
 Plugin URI: http://www.rowseatsplugin.com
 Description: Booking seats is easier with Row Seats plugin.This is a new solution to the increasing request to sell seats.It features shopping cart features, calendar backend function, csv file upload of your seat details. It also handles special seating such as handicap accessability. Just place the shortcode in a page or post and sell your show.
-Version: 2.0
+Version: 2.2
 Author: GC Development Team
 Author URI: http://www.rowseatsplugin.com
 */
@@ -30,7 +30,12 @@ define('RSTPLN_NAME', 'Row Seats');
 define('RSTPLN_PRIFIX', 'rst_');
 define('RSTPLN_CSSURL', plugins_url('/css/', __FILE__));
 define('RSTPLN_JSURL', plugins_url('/js/', __FILE__));
-define('RSTAJAXURL', home_url("/") . 'wp-admin/admin-ajax.php');
+
+if (is_ssl())
+    $scheme = 'https';
+else
+    $scheme = 'http';
+define('RSTAJAXURL', home_url('/wp-admin/admin-ajax.php', $scheme));
 
 
 $wpdb->rst_shows = 'rst_shows';
@@ -58,6 +63,8 @@ add_action('wp_ajax_refresh',                       'rst_ajax_callback');
 add_action('wp_ajax_nopriv_booking',                'rst_ajax_callback');
 add_action('wp_ajax_booking',                       'rst_ajax_callback');
 add_action('wp_ajax_save',                          'rst_ajax_callback');
+add_action('wp_ajax_update',                        'rst_ajax_callback');
+add_action('wp_ajax_delete',                        'rst_ajax_callback');
 add_action('wp_ajax_get_events',                    'rst_ajax_callback');
 add_action('wp_ajax_savebooking',                   'rst_ajax_callback');
 add_action('wp_ajax_nopriv_savebooking',            'rst_ajax_callback');

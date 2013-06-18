@@ -106,8 +106,30 @@ function gettheseatchart($showid, $type = '')
         $paymentsuccess = succesrstsmessage();
     }
 
-    ?>
 
+
+    $seats = rst_seats_operations('list', '', $showid['id']);
+    $divwidth = (($seats[0]['total_seats_per_row']) + 2) * 24;
+    $mindivwidth = 640;
+    if ($divwidth < $mindivwidth) {
+        $divwidth = $mindivwidth;
+    }
+
+    if ($rst_options['rst_alignment'] == 3) {
+        $style = 'margin-left: auto;';
+    }
+
+    if ($rst_options['rst_alignment'] == 2) {
+        $style = 'margin-right: auto;';
+    }
+
+    if ($rst_options['rst_alignment'] == 1) {
+        $style = 'margin: auto;';
+    }
+
+    ?>
+<!--qwe-->
+    <div style="width: <?php echo $divwidth; ?>px; <?php echo $style; ?>">
     <script type="text/javascript">
         var RSTPLN_CKURL = '<?php echo RSTPLN_CKURL?>';
         var RSTAJAXURL = '<?php echo RSTPLN_URL?>ajax.php';
@@ -116,10 +138,10 @@ function gettheseatchart($showid, $type = '')
     <script type='text/javascript' src='<?php echo RSTPLN_URL ?>js/jquery.blockUI.js'></script>
     <link rel="stylesheet" type="text/css" media="all" href="<?php echo RSTPLN_JALURL ?>jquery.alerts.css"/>
     <?php
-    /*if ($type == 'offline') {
+    if ($type == 'offline') {
         $stylecss = 'lite.css';
 
-    }*/
+    }
     ?>
     <link rel="stylesheet" type="text/css" media="all" href="<?php echo RSTPLN_CSSURL . $stylecss ?>"/>
     <script type='text/javascript' src='<?php echo RSTPLN_COKURL ?>jquery.cookie.js'></script>
@@ -173,7 +195,7 @@ function gettheseatchart($showid, $type = '')
 
 
         // showcart ----->
-        $html .= "<a name='show_top'></a><div class='showchart'><div class='showchart paymentsucess'>$paymentsuccess</div>
+        $html .= "<a name='show_top'></a><div class='showchart'><div style='width: 640px; margin: 0 auto;'><div class='showchart paymentsucess'>$paymentsuccess</div>
 
         <div style='float:left;color:#f21313;'>YOUR CART WILL EMPTY IF IDLE FOR 7MIN.&nbsp;&nbsp;</div>
 
@@ -187,7 +209,7 @@ function gettheseatchart($showid, $type = '')
 
         Venue:$venue<br/>
 
-        </div></div>";
+        </div></div></div>";
         // <----- showcart
 
         $html .= "<div id='showprview' class='localcss' align='center' style='width:100%; margin-left: auto;margin-right: auto;' >";
@@ -850,7 +872,9 @@ function gettheseatchart($showid, $type = '')
 
         <?php
 
-        return $html . '</div>';
+        $html .= '</div></div>'; //asd
+
+        return $html;
 
     }
 
@@ -1442,7 +1466,7 @@ function rst_ajax_callback()
 
                 break;
 
-            case 'get_events':
+            case 'get_events_back':
 
                 $arr = array();
                 $data = rst_shows_operations('list', '', '');
@@ -1452,7 +1476,7 @@ function rst_ajax_callback()
                         'title' => $data[$i]['show_name'],
                         'start' => date('Y-m-d H:i:s', strtotime($data[$i]['show_start_time'])),
                         'end' => date('Y-m-d H:i:s', strtotime($data[$i]['show_end_time'])),
-                        'allday' => true,
+                        'allday' => false,
                         'orient' => $data[$i]['orient'],
                         'body' => $data[$i]['venue']
                     );
@@ -1460,6 +1484,26 @@ function rst_ajax_callback()
                 echo json_encode($arr);
                 exit;
                 break;
+				
+            case 'get_events':				
+				$arr = array();
+
+				
+                $data = rst_shows_operations('list', '', '');
+                for ($i = 0; $i < count($data); $i++) {	
+
+				if($data[$i]['allday']==1)
+				{
+				$allday1=true;
+				}else{
+				$allday1=false;				
+				}		
+	            $arr[]=array(id=>$data[$i]['id'],title=>addslashes($data[$i]['show_name']),start=>date('Y-m-d H:i:s', strtotime($data[$i]['show_start_time'])),end=>date('Y-m-d H:i:s', strtotime($data[$i]['show_end_time'])),allDay=>$allday1,orient=>$data[$i]['orient'],body=>addslashes($data[$i]['venue']));
+				}
+				echo json_encode($arr);
+                exit;
+                break;
+				
 
             default:
                 break;
@@ -1625,7 +1669,6 @@ function gettheseatchartAutoRefresh($showid, $data, $currentcart)
 
         } else if ($data['seattype'] == 'Y') {
 
-            // qwe
             $html .= '<li class="notbooked showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="Seat ' . $rowname . ($seatno) . ' Price ' . $symbol . $seatcost . ' Available" rel="' . $data['seattype'] . '">' . ($seatno) . '</li>';
 
         } else if ($data['seattype'] == 'H') {
@@ -2362,7 +2405,7 @@ function gettheseatchartAjax($showid, $currenturl, $bookings, $offline = '')
 
     $html .= '';
 
-    $html .= '<div id="currentcart">
+    $html .= '<div id="currentcart"><div style="width: 640px;">
 
         <span class="notbooked showseats" ></span> <span class="show-text">Available </span>
 
@@ -2374,7 +2417,7 @@ function gettheseatchartAjax($showid, $currenturl, $bookings, $offline = '')
 
         <span class="handy showseats" ></span> <span class="show-text">Handicap Accomodation</span><br/><br/>';
 
-    $html .= '<div class="stage-hdng"></div></div>';
+    $html .= '<div class="stage-hdng"></div></div></div>';
 
     $rst_bookings = $bookings;
 
@@ -3444,3 +3487,6 @@ function delete_seats($action, $finalseats, $showid)
     global $wpdb;
     return $wpdb->query("DELETE FROM $wpdb->rst_seats WHERE show_id='$showid'");
 }
+
+
+?>

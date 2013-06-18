@@ -89,7 +89,8 @@ jQuery(document).ready(function () {
 
             if (view.name == 'month') {
 
-                var endField = $dialogContent.find("input[name='end']").val(event.start);
+                //var endField = $dialogContent.find("input[name='end']").val(event.start);
+				var endField = $dialogContent.find("input[name='end']").val(event.end);
 
             } else {
 
@@ -312,7 +313,7 @@ jQuery(document).ready(function () {
 
                                     eventid = data;
 
-
+         
                                     calendar.fullCalendar('renderEvent',
 
                                         {

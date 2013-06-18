@@ -429,7 +429,7 @@ ul.r li.z {
 }
 
 #showprview{
-width:642px !important; 
+width:100% !important;
 float:left !important;
 font-family: arial, verdana, sans-serif ;
 line-height:18px !important;
@@ -938,4 +938,4 @@ div.content-home img {
     margin-right: 1px !important;
 }
 .singular .entry-header, .singular .entry-content, .singular footer.entry-meta, .singular #comments-title {
-    width: 642px !important;
+    width: 100% !important;

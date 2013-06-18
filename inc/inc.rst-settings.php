@@ -206,8 +206,7 @@ phone: (818) 555-5555<br/>
 <!--                </td>-->
 <!--            </tr>-->
             <tr valign="top">
-                <th scope="row"><label for="name"><?php echo __('Select theme', 'rst'); ?><span
-                            style="color: red;">*</span></label>
+                <th scope="row"><label for="name"><?php echo __('Select theme', 'rst'); ?></label>
                 </th>
                 <td>
                     <select name="rst_theme" id="rst_theme">
@@ -237,9 +236,29 @@ phone: (818) 555-5555<br/>
                     </select>
                 </td>
             </tr>
+
+<tr valign="top">
+    <th scope="row"><label for="rst_alignment"><?php echo __('Alignment', 'rst'); ?></label>
+    </th>
+    <td>
+        <select name="rst_alignment" id="rst_alignment">
+            <option value="1" <?php if ($rst_options['rst_alignment'] == '1') echo 'selected'; ?>>
+                Center
+            </option>
+            <option value="2" <?php if ($rst_options['rst_alignment'] == '2') echo 'selected'; ?>>
+                Left
+            </option>
+            <option
+                value="3" <?php if ($rst_options['rst_alignment'] == '3') echo 'selected'; ?>>
+                Right
+            </option>
+
+        </select>
+    </td>
+</tr>
+
             <tr valign="top">
-                <th scope="row"><label for="name"><?php echo __('Disable JQuery', 'rst'); ?><span
-                            style="color: red;">*</span></label>
+                <th scope="row"><label for="name"><?php echo __('Disable JQuery', 'rst'); ?></label>
                 </th>
                 <td>
                     <input name="rst_enable_jquery" id="rst_enable_jquery" type="checkbox"
@@ -281,7 +300,7 @@ phone: (818) 555-5555<br/>
 
                 <div class="inside">
 
-                    <p><a href="http://www.rowseatsplugin.com/calendar" target="_blank"><img
+                    <p><a href="http://www.wpthemesforevents.com/row-seats-addon" target="_blank"><img
                                 style="cursor:pointer;"
                                 src="<?php echo RSTPLN_URL ?>images/row-seats-addon-calendar.jpg"/></a>
                         </a></p>

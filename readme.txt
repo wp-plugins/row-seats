@@ -7,7 +7,7 @@ Donate link: http://www.rowseatsplugin.com/row-seats-plugin-information
 Tags: row seats, booking seats, event booking, shows booking, event manager, booking events, sell seats, booking tickets, ticket booth, paypal booking
 Requires at least: 3.2
 Tested up to: 3.6
-Stable tag: 2.0
+Stable tag: 2.2
 
 Booking seats is easier with Row Seats plugin. This is a new solution to the increasing request to sell seats.
 
@@ -66,6 +66,11 @@ The shortcode will work in any page or post. You can obtain the shortcode after 
 
 
 == Changelog ==
+
+= 2.2 =
+* Fixed small bug with month calendar.  Shows now appear correctly in the Month Calender section. You can view each event created properly (time wise) as month/week/day view respectively
+* Added seating chart alignment.  You can set left, center or right alignment
+* Update files to accept new Membership + add-on
 
 = 2.0 =
 * New Core build.  You can add functional add-ons available, <a title="Row Seats add-ons" href="https://www.rowseatsplugin.com/products" target="_blank">click here</a>

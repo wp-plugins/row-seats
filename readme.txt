@@ -7,7 +7,7 @@ Donate link: http://www.rowseatsplugin.com/row-seats-plugin-information
 Tags: row seats, booking seats, event booking, shows booking, event manager, booking events, sell seats, booking tickets, ticket booth, paypal booking
 Requires at least: 3.2
 Tested up to: 3.6
-Stable tag: 2.2
+Stable tag: 2.4
 
 Booking seats is easier with Row Seats plugin. This is a new solution to the increasing request to sell seats.
 
@@ -66,6 +66,11 @@ The shortcode will work in any page or post. You can obtain the shortcode after 
 
 
 == Changelog ==
+
+= 2.4 =
+* updated jquery.blockUI.js to work with new jquery 1.10.1
+* updated row-seats-functions.php to work with new jquery 1.10.1
+* ready for wp 3.6 new jquery 1.10.1
 
 = 2.2 =
 * Fixed small bug with month calendar.  Shows now appear correctly in the Month Calender section. You can view each event created properly (time wise) as month/week/day view respectively

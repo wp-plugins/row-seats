@@ -199,15 +199,16 @@ function gettheseatchart($showid, $type = '')
 
         <div style='float:left;color:#f21313;'>YOUR CART WILL EMPTY IF IDLE FOR 7MIN.&nbsp;&nbsp;</div>
 
-        <div id='defaultCountdown' style='float:left;'></div>&nbsp;&nbsp;&nbsp;&nbsp;<a style='float:left; margin:0 0 0 100px;' href='#view_cart'>View Cart</a> <div style='float:left'>
+        <div id='defaultCountdown' style='float:left;'></div>
 
-        </div><div id='eventdetails'>
+        </div><div id='eventdetails' style='float:left;'>
 
         Event Name:$eventname <br/>
 
         Event Date & Time: $eventdate  $stopsonlinebooking.<br/>
 
         Venue:$venue<br/>
+        <a style='margin-left:0px;' href='#view_cart'>View Cart</a> <div style='float:left'>
 
         </div></div></div>";
         // <----- showcart
@@ -1428,7 +1429,8 @@ function rst_ajax_callback()
 
                 $data1 = explode('_', $details);
                 if (count($data1) == 1 && $_POST['cartiterms'] == null) {
-                    echo gettheseatchartAjax($data1[0], '', array(), $_POST['offline']);
+                    $showid['id'] = $data1[0];
+                    echo gettheseatchartAjax($showid, '', array(), $_POST['offline']);
                     exit();
 
                 } else if ($_POST['cartiterms'] != '' && count($data1) == 1) {

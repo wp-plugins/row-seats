@@ -1,11 +1,23 @@
 <?php
 
-//error_reporting(E_ERROR);
-
-
 /*
  * Adds the required columns to the existing table
  */
+ 
+function row_seats_special_pricing_verification()
+{
+    $installedplugins = get_option('active_plugins');
+    $found = false;
+    foreach ($installedplugins as $key => $value) {
+        $pos = strpos($value, 'row-seats-special-pricing.php');
+        if ($pos === false) {
+        } else {
+            $found = true;
+        }
+    }
+    return $found;
+}
+
 function registerOptions()
 {
     global $wpdb;
@@ -67,6 +79,8 @@ function adminMenu()
  */
 function gettheseatchart($showid, $type = '')
 {
+
+global $screenspacing;
     if ($type == 'offline') {
         $offlineAdmin = 'admin';
     }
@@ -106,10 +120,15 @@ function gettheseatchart($showid, $type = '')
         $paymentsuccess = succesrstsmessage();
     }
 
-
-
+    $screenspacing=1;
+    if($rst_options['rst_zoom'])
+    {
+    $screenspacing=$rst_options['rst_zoom'];
+    }
     $seats = rst_seats_operations('list', '', $showid['id']);
     $divwidth = (($seats[0]['total_seats_per_row']) + 2) * 24;
+    
+    $divwidth=$divwidth * $rst_options['rst_zoom'];
     $mindivwidth = 640;
     if ($divwidth < $mindivwidth) {
         $divwidth = $mindivwidth;
@@ -129,7 +148,7 @@ function gettheseatchart($showid, $type = '')
 
     ?>
 <!--qwe-->
-    <div style="width: <?php echo $divwidth; ?>px; <?php echo $style; ?>">
+    <div style="width: <?php echo $divwidth;?>px; <?php echo $style; ?>">
     <script type="text/javascript">
         var RSTPLN_CKURL = '<?php echo RSTPLN_CKURL?>';
         var RSTAJAXURL = '<?php echo RSTPLN_URL?>ajax.php';
@@ -143,7 +162,36 @@ function gettheseatchart($showid, $type = '')
 
     }
     ?>
+   
+    
     <link rel="stylesheet" type="text/css" media="all" href="<?php echo RSTPLN_CSSURL . $stylecss ?>"/>
+    
+    <style>
+
+
+ul.r li {
+
+
+
+    font-size: <?php echo (int)(10 * $rst_options['rst_zoom']);?>px !important;
+
+    height: <?php echo (int)(24 * $rst_options['rst_zoom']);?>px !important;
+
+    line-height: <?php echo (int)(24 * $rst_options['rst_zoom']);?>px !important;
+
+
+    width: <?php echo (int)(21 * $rst_options['rst_zoom']);?>px !important;
+
+
+
+  
+
+}
+
+
+
+</style> 
+
     <script type='text/javascript' src='<?php echo RSTPLN_COKURL ?>jquery.cookie.js'></script>
     <script type="text/javascript" src="<?php echo RSTPLN_IDLKURL ?>jquery.countdown.js"></script>
     <script type="text/javascript" src="<?php echo RSTPLN_IDLKURL ?>idle-timer.js"></script>
@@ -187,7 +235,7 @@ function gettheseatchart($showid, $type = '')
     $currenttime = current_time('mysql', 0);
     if ($currentdate >= $eventdate1 && $type != 'offline') {
 
-        echo   '<div><br/><strong>*Online Booking is Closed, We Appreciate Your Patronage!</strong></div>';
+        echo   '<div><br/><strong>*Online Booking is Closed, We Appreciate Your Patronage!</strong></div></div>';
 
     } else {
 
@@ -195,13 +243,13 @@ function gettheseatchart($showid, $type = '')
 
 
         // showcart ----->
-        $html .= "<a name='show_top'></a><div class='showchart'><div style='width: 640px; margin: 0 auto;'><div class='showchart paymentsucess'>$paymentsuccess</div>
+        $html .= "<a name='show_top'></a><div class='showchart'><div style='width:".(int)(640 * $rst_options['rst_zoom'])."px; margin: 0 auto;'><div class='showchart paymentsucess'>$paymentsuccess</div>
 
         <div style='float:left;color:#f21313;'>YOUR CART WILL EMPTY IF IDLE FOR 7MIN.&nbsp;&nbsp;</div>
 
-        <div id='defaultCountdown' style='float:left;'></div>
+        <div id='defaultCountdown' ></div>
 
-        </div><div id='eventdetails' style='float:left;'>
+        </div><div id='eventdetails' >
 
         Event Name:$eventname <br/>
 
@@ -472,9 +520,48 @@ function gettheseatchart($showid, $type = '')
                 refreshshow("<?php echo $showid?>");
             }
         }
+//Javascript function to format currency - start
+
+function formatCurrency(num) {
+num = num.toString().replace(/\$|\,/g, '');
+if (isNaN(num)) num = "0";
+sign = (num == (num = Math.abs(num)));
+num = Math.floor(num * 100 + 0.50000000001);
+cents = num % 100;
+num = Math.floor(num / 100).toString();
+if (cents < 10) cents = "0" + cents;
+for (var i = 0; i < Math.floor((num.length - (1 + i)) / 3); i++)
+num = num.substring(0, num.length - (4 * i + 3)) + ',' + num.substring(num.length - (4 * i + 3));
+return (((sign) ? '' : '-') + '' + num + '.' + cents);
+}
+//Javascript function to format currency - end
 
 
-        function savecheckoutdata(id) {
+    function savecheckoutdata(id) {
+var mycartproducts;	
+<?php
+	
+if($rst_options['rst_enable_special_pricing']=="on" and row_seats_special_pricing_verification())
+{
+
+?>	
+	//Sending special price to ajax call for saving....	
+	var totalitems=document.getElementById('totalrecords').value;
+	
+	for (var i=0; i<totalitems; i++)
+	{
+	var dropboxvalue=document.getElementById('special_pricing'+i).value;
+	if(i==0)
+	{
+	mycartproducts=dropboxvalue;
+	}else{
+	mycartproducts=mycartproducts+"__"+dropboxvalue;
+	}
+	}
+
+<?php }?>	
+
+	
 
             if (document.getElementById('contact_name').value == "") {
 
@@ -524,6 +611,10 @@ function gettheseatchart($showid, $type = '')
 
                 return false;
             }
+			
+	
+
+	
 
             if (id == 'placeorder') {
 
@@ -545,6 +636,9 @@ function gettheseatchart($showid, $type = '')
                 else {
                     regstatus = 'pending_paypal';
                 }
+
+
+
                 jQuery.post('<?php echo RSTAJAXURL?>',
                     {
                         action: 'savebooking',
@@ -552,6 +646,7 @@ function gettheseatchart($showid, $type = '')
                         email: document.getElementById('contact_email').value,
                         phone: document.getElementById('contact_phone').value,
                         status: regstatus,
+			            myproducts: mycartproducts,
                         redirecturl: document.getElementById('redirecturl').value,
                         cartiterms: jQuery.cookie("rst_cart_<?php echo $showid?>")
                     },
@@ -721,7 +816,7 @@ function gettheseatchart($showid, $type = '')
 
                                 document.getElementById('amount').value = document.getElementById('totalbackup').value;
 
-                                jQuery('#aftercoupongrand').hide();
+                               // jQuery('#aftercoupongrand').hide();
 
                                 jQuery('#aftercoupondis').hide();
 
@@ -1001,7 +1096,33 @@ function rst_shows_operations($action, $data, $currentcart)
             $rst_session_id = session_id();
 
             $cartitems = unserialize($currentcart);
+			$rst_options = get_option(RSTPLN_OPTIONS);	
+			//updating ticket price with special price - start
+			if($rst_options['rst_enable_special_pricing']=="on" and row_seats_special_pricing_verification())
+			{
 
+							
+					$myproducts = $data['myproducts'];
+					$myproductsarray=split("__",$myproducts);
+					for ($i = 0; $i < count($myproductsarray); $i++) {
+						$myproductsarraytemp=split("#",$myproductsarray[$i]);
+						$myproductsarrayfinal[]=array($myproductsarraytemp[0],$myproductsarraytemp[1]);
+					}
+					
+					$tempcartitems=$cartitems;
+					for ($i = 0; $i < count($tempcartitems); $i++) {
+						if($myproductsarrayfinal[$i][0]!='normal')
+						{
+							$tempcartitems[$i]['price'] = $myproductsarrayfinal[$i][1];					
+						}
+					}
+
+					$cartitems=$tempcartitems;
+					$currentcart = serialize($cartitems);    
+					
+			} 	
+			//updating ticket price with special price - end
+            
             $booking_details = $cartitems;
             $paypal_vars = '';
             $booking_time = date('Y-m-d H:i:s');
@@ -1521,7 +1642,11 @@ function rst_ajax_callback()
  */
 function gettheseatchartAutoRefresh($showid, $data, $currentcart)
 {
+
+global $screenspacing;
     $rst_paypal_options = get_option(RSTPLN_PPOPTIONS);
+    $rst_options = get_option(RSTPLN_OPTIONS);
+
 
     $symbol = $rst_paypal_options['currencysymbol'];
 
@@ -1547,6 +1672,7 @@ function gettheseatchartAutoRefresh($showid, $data, $currentcart)
     }
 
     $divwidth = (($seats[0]['total_seats_per_row']) + 2) * 24;
+     $divwidth=$divwidth * $rst_options['rst_zoom'];
 
     $showname = $data[0]['show_name'];
 
@@ -1970,6 +2096,9 @@ function rst_seats_operations($action, $finalseats, $showid)
  */
 function gettheseatchartAjax($showid, $currenturl, $bookings, $offline = '')
 {
+
+global $screenspacing;
+
     ?>
 
     <!-- OUR PopupBox DIV-->
@@ -2132,12 +2261,56 @@ function gettheseatchartAjax($showid, $currenturl, $bookings, $offline = '')
     <table width="100%" cellpadding="0" cellspacing="0">
 
     <tr>
-    <td class="tableft" width="40%">
+    <td class="tableft" width="50%">
 
-        <table width="100%" cellpadding="0" cellspacing="0">
+        <table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="red">
+<?php
+		$totalitems= count($bookings);
 
+if($rst_options['rst_enable_special_pricing']=="on" and row_seats_special_pricing_verification())
+{	
+		
+?>
+<script language="javascript">
+function updateprice()
+{
+	var totalitems=document.getElementById('totalrecords').value;
+	var total=0;
+	var gtotal=0;
+	var htmlstring;
+	for (var i=0; i<totalitems; i++)
+	{
+	var dropboxvalue=document.getElementById('special_pricing'+i).value;
+	var dropboxvalues = dropboxvalue.split('#');
+		document.getElementById("price"+i).innerHTML=""+dropboxvalues[1];
+		total=parseFloat(total)+parseFloat(dropboxvalues[1]);
+	}
+	document.getElementById("total").innerHTML=formatCurrency(total);
+	document.getElementById('amount').value=total;
+	gtotal=total;
+
+	if(document.getElementById('rst_fees').value!='')
+	{
+		gtotal=parseFloat(gtotal) + parseFloat(document.getElementById('rst_fees').value);
+		document.getElementById('aftercoupongrand').style.visibility="visible";
+	}
+
+	if(document.getElementById('coupondiscount').value!='')
+	{
+		gtotal=parseFloat(gtotal) - parseFloat(document.getElementById('coupondiscount').value);
+		document.getElementById('discountamount').innerHTML=document.getElementById('coupondiscount').value;
+		document.getElementById('aftercoupondis').style.visibility="visible";
+		document.getElementById('aftercoupongrand').style.visibility="visible";
+	}
+	document.getElementById('Grandtotal').innerHTML=formatCurrency(gtotal);
+	document.getElementById('amount').value=gtotal;
+
+}
+</script>
 
             <?php
+			
+}			
 
             $rst_bookings = $bookings;
 
@@ -2146,17 +2319,61 @@ function gettheseatchartAjax($showid, $currenturl, $bookings, $offline = '')
             $total = 0;
 
             $totalseats = 0;
+	    $totalspecialpricing=$rst_options['rst_special_pricing_count']+1;
+	    if(!$rst_options['rst_special_pricing_count'])
+	    $totalspecialpricing=1;
 
             for ($i = 0; $i < count($rst_bookings); $i++) {
 
                 $rst_booking = $rst_bookings[$i];
+				//creating special price dropdown
+				if($rst_options['rst_enable_special_pricing']=="on" and row_seats_special_pricing_verification())
+				{			
+					$special_pricing_array=array();
+					for($j=1;$j<$totalspecialpricing;$j++){
+						if($rst_options['rst_special_pricing_title'.$j] && $rst_options['rst_special_pricing_price'.$j])
+						{
+							$flat_rate=$rst_options['rst_special_pricing_flat_rate'.$j];
+							$finalprice=$rst_options['rst_special_pricing_price'.$j];
+							if($flat_rate=="on")
+							{
+								$finalprice=$finalprice;
+							}else{
+								$finalprice=$rst_booking['price']-($rst_booking['price']*($finalprice/100));
+							}
+							$finalprice = number_format($finalprice, 2, '.', '');
+							$special_pricing_array[$rst_options['rst_special_pricing_title'.$j]]=$finalprice;
+						}
+					}
+				}
+								
 
-                ?>
+								?>
 
 
                 <tr>
-                    <td>Seat:<?php echo $rst_booking['row_name'] . $rst_booking['seatno'];?>-Cost:</td>
-                    <td><?php echo $symbol . $rst_booking['price'];?></td>
+                    <td width=50%">Seat:<?php echo $rst_booking['row_name'] . $rst_booking['seatno'];?>-Cost:</td>
+                    <td><table><tr><td><span style="color: maroon;font-size: small;"><?php echo $symbol;?></span><span style="color: maroon;font-size: small;" id="price<?php echo $i;?>"><?php echo $rst_booking['price'];?></span></td>
+					<td>
+					<?php
+					//creating special price dropdown
+					
+					if($rst_options['rst_enable_special_pricing']=="on" and row_seats_special_pricing_verification())
+					{	
+					?>					
+					<select name="special_pricing<?php echo $i;?>" id="special_pricing<?php echo $i;?>" onchange="updateprice();">		
+					<option value="normal#<?php echo $rst_booking['price'];?>">Normal</option>
+					<?php
+					foreach($special_pricing_array as $key=>$value){
+					print "<option value='".$key."#".$value."'>".$key."           ".$symbol.$value."</option>";
+					}
+					?>				
+					</select>
+
+					<?php
+					}
+					?>					
+					</td></tr></table></td>
                 </tr>
 
 
@@ -2170,11 +2387,13 @@ function gettheseatchartAjax($showid, $currenturl, $bookings, $offline = '')
 
 
             <tr class="carttotclass" style="border-top:1px solid #e7e7e7 !important;">
-                <td><span style="color: maroon;font-size: larger;">Total Amount:</span></td>
-                <td><span style="color: maroon;font-size: larger;"><?php echo $symbol . $total;?></span>
+                <td width="50%"><span style="color: maroon;font-size: larger;">Total:</span></td>
+                <td width="50%" ><span style="color: maroon;font-size: larger;"><?php echo $symbol;?></span><span
+                        style="color: maroon;font-size: larger;" id="total"><?php echo $total;?></span>
                 </td>
             </tr>
 
+		
 
             <?php
             $wpfeeoptions = get_option(RSTFEE_OPTIONS);
@@ -2200,28 +2419,38 @@ function gettheseatchartAjax($showid, $currenturl, $bookings, $offline = '')
 
                 <?php
                 /* fees ----- */
-                echo apply_filters('rst_fee_fields_filter', '', $wpfeeoptions, $symbol, $sercharge, $gtotal);
+                apply_filters('rst_fee_fields_filter', '', $wpfeeoptions, $symbol, $sercharge, $gtotal);
+				$fee_name=$wpfeeoptions['fee_name'];
                 /* ----- fees */
                 ?>
+				
+            <tr >
+
+                <td width="50%"><span style="color: green;font-size: larger;"><?php echo $fee_name;?>:</span></td>
+
+                <td width="50%"><span style="color: green;font-size: larger;"><?php echo $symbol;?></span><span
+                        style="color: green;font-size: larger;" id="fee_name"><?php echo esc_attr($sercharge); ?></span></td>
+
+            </tr>				
 
             <?php } ?>
 
 
             <tr id="aftercoupondis" style="display: none;">
 
-                <td><span style="color: green;font-size: larger;">Discount Amount:</span></td>
+                <td width="50%"><span style="color: green;font-size: larger;">Discount:</span></td>
 
-                <td><span style="color: green;font-size: larger;"><?php echo $symbol;?></span><span
+                <td width="50%"><span style="color: green;font-size: larger;"><?php echo $symbol;?></span><span
                         style="color: green;font-size: larger;" id="discountamount"></span></td>
 
             </tr>
-            <tr id="aftercoupongrand" style="display: none; border-top:1px solid #e7e7e7 !important;"
+            <tr id="aftercoupongrand" style="border-top:1px solid #e7e7e7 !important;"
                 class="carttotclass">
 
-                <td><span style="color: maroon;font-size: larger;"><strong>Grand Total:</strong></span></td>
+                <td width="50%"><span style="color: maroon;font-size: larger;"><strong>Grand:</strong></span></td>
 
-                <td><span style="color: maroon;font-size: larger;"><?php echo $symbol;?></span><span
-                        style="color: maroon;font-size: larger;" id="Grandtotal"></span></td>
+                <td width="50%"><span style="color: maroon;font-size: larger;"><?php echo $symbol;?></span><span
+                        style="color: maroon;font-size: larger;" id="Grandtotal"><?php echo $gtotal;?></span></td>
 
             </tr>
 
@@ -2338,7 +2567,7 @@ function gettheseatchartAjax($showid, $currenturl, $bookings, $offline = '')
             <input type="hidden" name="amount" id="amount" value="<?php echo esc_attr($gtotal); ?>"/>
 
 
-            <input type="hidden" name="item_name" value="Seats Booking"/>
+            <input type="hidden" id="item_name" name="item_name" value="Seats Booking"/>
 
             <input type="hidden" name="custom" id="custom" value=""/>
 
@@ -2362,9 +2591,11 @@ function gettheseatchartAjax($showid, $currenturl, $bookings, $offline = '')
 
     <input type="hidden" name="statusofcouponapply" id="statusofcouponapply" value=""/>
 
+    <input type="hidden" name="totalrecords" id="totalrecords" value="<?php echo count($bookings);?>"/>
+    
     <input type="hidden" name="coupondiscount" id="coupondiscount" value=""/>
     <input type="hidden" name="rst_fees" id="rst_fees" value="<?php echo esc_attr($sercharge); ?>"/>
-
+	<input type="hidden" name="fee_name" id="fee_name" value="<?php echo esc_attr($fee_name); ?>"/>
 
     </div>
 
@@ -2402,12 +2633,12 @@ function gettheseatchartAjax($showid, $currenturl, $bookings, $offline = '')
     }
 
     $divwidth = (($seats[0]['total_seats_per_row']) + 2) * 24;
-
+     $divwidth=$divwidth * $rst_options['rst_zoom'];
     $showname = $data[0]['show_name'];
 
     $html .= '';
 
-    $html .= '<div id="currentcart"><div style="width: 640px;">
+    $html .= '<div id="currentcart"><div style="width: '.(int)(640 * $rst_options['rst_zoom']).'px;">
 
         <span class="notbooked showseats" ></span> <span class="show-text">Available </span>
 
@@ -2636,7 +2867,7 @@ function gettheseatchartAjax($showid, $currenturl, $bookings, $offline = '')
 
     // cartitems ----->
 
-    $html .= '<div id="gap" style="clear:both;float:left;">&nbsp;</div><a NAME="view_cart"></a><div class="cartitems" style="width:' . $divwidth . 'px; min-width:300px;"><div class="cart-hdng"aligh="center"><strong>Items in Cart</strong> <span style="float:right; width: 48px;"><a href="#show_top"><strong style="vertical-align: middle; float:left; color:#000;">Up</strong><img style="margin: 3px 0 0; float:right;" src="' . RSTPLN_URL . 'images/up.png" alt="Up" title="Up" /></a></span></div><table style="color:#51020b;">';
+    $html .= '<div id="gap" style="clear:both;float:left;">&nbsp;</div><a NAME="view_cart"></a><div class="cartitems" style="width:' . $divwidth . 'px; border:1px solid;border-radius:5px;box-shadow: 5px 5px 2px #888888;"><div class="cart-hdng"align="center" style="border:0px solid;border-radius:5px;"><strong>Items in Cart</strong> <span style="float:right; width: 48px;"><a href="#show_top"><strong style="vertical-align: middle; float:left; color:#000;">Up</strong><img style="margin: 3px 0 0; float:right;" src="' . RSTPLN_URL . 'images/up.png" alt="Up" title="Up" /></a></span></div><table style="color:#51020b;">';
 
     if ($rst_bookings != '' && count($rst_bookings) > 0) {
 
@@ -2790,6 +3021,8 @@ function bookedtickets($byshowid, $datefrom, $dateto)
  */
 function gettheadminseatchat($showid)
 {
+
+global $screenspacing;
     $rst_paypal_options = get_option(RSTPLN_PPOPTIONS);
     $symbol = $rst_paypal_options['currencysymbol'];
     $symbols = array(
@@ -2831,7 +3064,7 @@ function gettheadminseatchat($showid)
     }
 
     $divwidth = (($seats[0]['total_seats_per_row']) + 2) * 24;
-
+     //$divwidth=$divwidth * $rst_options['rst_zoom'];
     $showname = $data[0]['show_name'];
 
     $html = '';

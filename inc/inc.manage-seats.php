@@ -41,7 +41,7 @@ if (isset($_POST) && $_POST['Submit'] == 'Upload') {
         $csvheaders = array();
         $k = 1;
 
-        while (($data = fgetcsv($handle, 10000, ",")) !== FALSE) {
+        while (($data = fgetcsv($handle, 10000, $_POST['rst_csvdelimiter'])) !== FALSE) {
 
             if ($k == 4) {
                 array_shift($data);
@@ -146,7 +146,13 @@ if ($showname != '') {
                         <input type="text" id="rst_showname" name="rst_showname" class="regular-text"
                                disabled="disabled" value="<?php echo $showname ?>"/>
                     </td>
-                </tr>
+<tr valign="top">                    
+<th scope="row"><label for="name"><?php echo __('CSV delimiter    (US default is , comma for EU users choose ; semicolon)', 'rst'); ?><span  style="color: red;">*</span></label>
+</th>                    
+<td><select id='rst_csvdelimiter' name='rst_csvdelimiter'>
+<option value=","><font size=15>","</font> [Comma]</option><option value=";"><font size=15>";"</font> [Semi Colon]</option></select></td>
+</tr>	
+
                 <tr valign="top">
                     <th scope="row"><label for="name"><?php echo __('Upload CSV file', 'rst'); ?><span
                                 style="color: red;">*</span></label>

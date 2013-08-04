@@ -7,7 +7,7 @@ Donate link: http://www.rowseatsplugin.com/row-seats-plugin-information
 Tags: row seats, booking seats, event booking, shows booking, event manager, booking events, sell seats, booking tickets, ticket booth, paypal booking
 Requires at least: 3.2
 Tested up to: 3.6
-Stable tag: 2.4
+Stable tag: 2.6
 
 Booking seats is easier with Row Seats plugin. This is a new solution to the increasing request to sell seats.
 
@@ -66,6 +66,11 @@ The shortcode will work in any page or post. You can obtain the shortcode after 
 
 
 == Changelog ==
+
+= 2.6 =
+* chart resizing up to 70% [zoom in/out]. Handy for big charts
+* csv import options (comma or semi colon dropdown selection). CSV seperator/delimiter
+* updated functions file to accept new Special Price add-on
 
 = 2.4 =
 * updated jquery.blockUI.js to work with new jquery 1.10.1

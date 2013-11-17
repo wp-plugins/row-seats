@@ -125,6 +125,43 @@ function rst_create_tables()
 
         mysql_query($sql);
     }
+	
+    if ($wpdb->get_var("SHOW TABLES LIKE 'rst_payment_transactions'") != 'rst_payment_transactions') {
+        //seatid,show_id,row_name,total_seats_per_row,seatno,seattype,originaltype,seat_price,discount_price,created_date,mod_date,mod_by
+        $sql = "CREATE TABLE  rst_payment_transactions (
+  id int(11) NOT NULL AUTO_INCREMENT,
+  tx_str varchar(31) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  payer_name varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  payer_email varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  gross float DEFAULT NULL,
+  currency varchar(15) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  payment_status varchar(31) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  transaction_type varchar(31) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  details text CHARACTER SET utf8 COLLATE utf8_unicode_ci,
+  created int(11) DEFAULT NULL,
+  deleted int(11) DEFAULT '0',
+  show_name varchar(200) NOT NULL,
+  show_date date NOT NULL,
+  coupon_code varchar(200) NOT NULL,
+  coupon_discount float NOT NULL,
+  special_fee float NOT NULL,
+  ticket_no varchar(200) NOT NULL,
+  seat_numbers varchar(200) NOT NULL,
+  seat_cost varchar(200) NOT NULL,
+  custom varchar(200) NOT NULL,
+  first_name varchar(200) NOT NULL,
+  last_name varchar(200) NOT NULL,
+  address varchar(200) NOT NULL,
+  city varchar(200) NOT NULL,
+  state varchar(200) NOT NULL,
+  zip varchar(200) NOT NULL,
+  country varchar(200) NOT NULL,
+  phone varchar(200) NOT NULL,
+  UNIQUE KEY id (id)
+);";
+
+        mysql_query($sql);
+    }	
 
     /*if ($wpdb->get_var("SHOW TABLES LIKE '$wpdb->rst_memebers'") != $wpdb->rst_memebers) {
         $sql = "CREATE TABLE " . $wpdb->rst_memebers . " (

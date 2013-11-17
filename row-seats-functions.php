@@ -1,9 +1,463 @@
 <?php
 
-/*
- * Adds the required columns to the existing table
- */
- 
+function rst_transaction_details()
+{
+global $wpdb;
+
+//Displaying transaction details on admin side
+
+					if($_GET['action']=="rst-transaction-details")
+					{
+
+						if (isset($_GET["id"]) && !empty($_GET["id"])) {
+							$id = intval($_GET["id"]);
+							$transaction_details = $wpdb->get_row("SELECT * FROM rst_payment_transactions WHERE id = '".$id."' AND deleted = '0'", ARRAY_A);
+							if (intval($transaction_details["id"]) != 0) {
+								echo '
+								<html>
+								<head>
+									<title>'.__('Transaction Details', 'wpgc').'</title>
+								</head>
+								<body>
+									<table style="width: 100%;">';
+								$details = explode("&", $transaction_details["details"]);
+								foreach ($details as $param) {
+									$data = explode("=", $param, 2);
+									echo '
+								<tr>
+									<td style="width: 170px; font-weight: bold;">'.esc_attr($data[0]).'</td>
+									<td>'.esc_attr(urldecode($data[1])).'</td>
+								</tr>';
+								}
+								echo '
+								</table>
+							</body>
+							</html>';
+
+							} else echo __('No data found!', 'row_seats');
+						} else echo __('No data found!', 'row_seats');
+						die();
+
+					}
+//Deleting a transaction from admin side		
+					if($_GET['action']=="rst-delete-transaction")
+					{
+
+						$id = intval($_GET["id"]);
+						$transaction_details = $wpdb->get_row("SELECT * FROM rst_payment_transactions WHERE id = '".$id."' AND deleted = '0'", ARRAY_A);
+						if (empty($transaction_details)) {
+							setcookie("rst_error", __('Selected record not found.', 'rst'), time()+30, "/", ".".str_replace("www.", "", $_SERVER["SERVER_NAME"]));
+							header('Location: '.admin_url('admin.php').'?page=rst-transactions');
+							die();
+						}
+
+						$sql = "UPDATE rst_payment_transactions SET deleted = '1' WHERE id = '".$id."'";
+						if ($wpdb->query($sql) !== false) {
+							setcookie("rst_info", __('Selected record successfully removed.', 'rst'), time()+30, "/", ".".str_replace("www.", "", $_SERVER["SERVER_NAME"]));
+							header('Location: '.admin_url('admin.php').'?page=rst-transactions');
+							die();
+						} else {
+							setcookie("rst_error", __('Internal error occured.', 'rst'), time()+30, "/", ".".str_replace("www.", "", $_SERVER["SERVER_NAME"]));
+							header('Location: '.admin_url('admin.php').'?page=rst-transactions');
+							die();
+						}
+					}
+//Setting an offline registration as paid from admin side		
+					if($_GET['action']=="rst-paid-transaction")
+					{
+
+						$id = intval($_GET["id"]);
+						$transaction_details = $wpdb->get_row("SELECT * FROM rst_payment_transactions WHERE id = '".$id."' AND deleted = '0'", ARRAY_A);
+						if (intval($transaction_details["id"]) != 0) {	
+						$gross_total=$transaction_details["gross"];		
+						$sql = "select * from $wpdb->rst_bookings rstbk,$wpdb->rst_shows rsts where  rsts.id = rstbk.show_id and rstbk.booking_id =" . $transaction_details["tx_str"];  
+        $sql = "select * from $wpdb->rst_bookings rstbk,$wpdb->rst_booking_seats_relation bsr,$wpdb->rst_shows rsts
+
+        where  bsr.booking_id = rstbk.booking_id
+
+        and rsts.id = bsr.show_id
+
+        and bsr.booking_id =" . $transaction_details["tx_str"];		
+						
+						if ($results = $wpdb->get_results($sql, ARRAY_A)) {
+							$booking_details = $wpdb->get_results($sql, ARRAY_A);       
+							$data = $booking_details;
+							$show_name = $booking_details[0]['show_name'];
+							$show_date= $booking_details[0]['show_date'];
+							$booking_details = $booking_details[0]['booking_details'];
+							$ticketno = $rst_options['rst_ticket_prefix'] . $_POST['x_invoice_num'];
+							$booking_details = unserialize($booking_details);
+							$ticket_seat_no=array();
+							for ($row = 0; $row < count($booking_details); $row++) {
+								$seats = $booking_details[$row]['seatno'];
+								$rowname = $booking_details[$row]['row_name'];
+								$ticket_seat_no[]=$rowname . $seats;								
+							}
+							$ticket_seat_no=implode(",",$ticket_seat_no);						
+							sendrstmail($data, "TXYN".$transaction_details["tx_str"]); //Sending tickets to customer
+						}		
+
+						$payment_status="Completed";
+						$sql = "UPDATE rst_payment_transactions SET transaction_type = 'Offline Payment:Paid',payment_status='".$payment_status."' WHERE id = '".$id."'";
+						$wpdb->query($sql);	
+						//sending notification to payer.
+						$tags = array('{payer_name}', '{payer_email}', '{payment_status}', '{show_name}', '{show_date}', '{seats}','{amount}');
+						$vals = array($transaction_details["payer_name"], $transaction_details["payer_email"], $payment_status,$show_name ,$show_date,$ticket_seat_no,$gross_total );
+						$body = str_replace($tags, $vals, get_option('rst_success_email_body'));
+
+						$mail_headers = "Content-Type: text/plain; charset=utf-8\r\n";
+						$mail_headers .= "From: ".get_option('rst_from_name')." <".get_option('rst_from_email').">\r\n";
+						$mail_headers .= "X-Mailer: PHP/".phpversion()."\r\n";
+						wp_mail($transaction_details["payer_email"], get_option('rst_success_email_subject'), $body, $mail_headers);				
+							
+						}
+						header('Location: '.admin_url('admin.php').'?page=rst-transactions');
+						exit;
+					}			
+					
+
+					if($_GET['action']=="rst-export-transactions")
+					{
+
+						$sql = "SELECT * FROM rst_payment_transactions WHERE deleted = '0' ORDER BY created DESC";
+						$rows = $wpdb->get_results($sql, ARRAY_A);
+						if (sizeof($rows) > 0) {
+							if (strstr($_SERVER["HTTP_USER_AGENT"],"MSIE")) {
+								header("Pragma: public");
+								header("Expires: 0");
+								header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+								header("Content-type: application-download");
+								header("Content-Disposition: attachment; filename=\"transactions.csv\"");
+								header("Content-Transfer-Encoding: binary");
+							} else {
+								header("Content-type: application-download");
+								header("Content-Disposition: attachment; filename=\"transactions.csv\"");
+							}
+							$separator = ",";
+							if ($separator == 'tab') $separator = "\t";					
+
+							$transaction_columns = array(
+								'bookingid' => __('Booking ID', 'row_seats'),
+								'payer_name' => __('Payer Name', 'row_seats'),
+								'payer_email' => __('Payer E-mail', 'row_seats'),
+								'amount' => __('Amount', 'row_seats'),
+								'currency' => __('Currency', 'row_seats'),
+								'status' => __('Status', 'row_seats'),
+								'paymentmethod' => __('Payment Method', 'row_seats'),
+								'created' => __('Created', 'row_seats'),
+								'first_name' => __('First Name', 'row_seats'),
+								'last_name' => __('Last Name', 'row_seats'),
+								'address' => __('Address', 'row_seats'),
+								'city' => __('City', 'row_seats'),
+								'state' => __('State', 'row_seats'),
+								'zip' => __('ZIP/Postal Code', 'row_seats'),
+								'country' => __('Country', 'row_seats'),
+								'phone' => __('Phone', 'row_seats')							
+							);
+
+							//$transaction_columns = apply_filters('wpgc_payment_transaction_csv_columns', $transaction_columns);
+							$i = 0;
+							foreach($transaction_columns as $value) {
+								echo ($i > 0 ? $separator : '').'"'.str_replace('"', '', $value).'"';
+								$i++;
+
+							}
+							echo PHP_EOL;
+							foreach ($rows as $row) {
+								$transaction_column_values = array(
+									'certificates' => $row['id'],
+									'payer_name' => $row['payer_name'],
+									'payer_email' => $row['payer_email'],
+									'amount' => number_format($row['gross'], 2, ".", ""),
+									'currency' => $row['currency'],
+									'status' => $row["payment_status"],
+									'paymentmethod' => $row["transaction_type"],
+									'created' => date("Y-m-d H:i:s", $row["created"]),
+									'first_name' =>$row['first_name'],
+									'last_name' =>$row['last_name'],
+									'address' =>$row['address'],
+									'city' =>$row['city'],
+									'state' =>$row['state'],
+									'zip' =>$row['zip'],
+									'country' =>$row['country'],
+									'phone' =>$row['phone']							
+								);
+								//$transaction_column_values = apply_filters('wpgc_payment_transaction_csv_column_values', $transaction_column_values, $row);
+								$i = 0;
+								foreach($transaction_column_values as $value) {
+									echo ($i > 0 ? $separator : '').'"'.str_replace('"', '', $value).'"';
+									$i++;
+								}
+								echo PHP_EOL;
+							}
+							exit;
+						}
+						header("Location: ".admin_url('admin.php')."?page=rst-transactions");
+						exit;
+					}
+
+
+}
+function wp_row_seats_signup_call()
+{
+
+	$rst_options = get_option(RSTPLN_OPTIONS);
+
+	$rst_paypal_options = get_option(RSTPLN_PPOPTIONS);
+	
+	$wplanguagesoptions = get_option(RSTLANGUAGES_OPTIONS);
+	$event_warning_message="Attention! Please correct the errors below and try again.";
+	$event_enter_name="Please enter name";
+    $event_enter_email="Please enter email";
+    $event_enter_phone="Please enter phone";
+    $event_enter_terms="Please agree to our Terms and Conditions to continue";
+	$event_customer_name="Name";
+	$event_customer_email="Email";
+	$event_customer_phone="Phone";
+	$event_seat="Seat";
+	$event_item_cost="Cost";
+	$offline_purchase="Purchase";
+	$offline_edit_info="Edit info";
+    
+	if($wplanguagesoptions['rst_enable_languages']=="on")
+	{
+		if($wplanguagesoptions['languages_event_enter_name'])
+		{
+			$event_enter_name=$wplanguagesoptions['languages_event_enter_name'];
+		}
+		if($wplanguagesoptions['languages_event_enter_email'])
+		{
+			$event_enter_email=$wplanguagesoptions['languages_event_enter_email'];
+		}
+		if($wplanguagesoptions['languages_event_enter_phone'])
+		{
+			$event_enter_phone=$wplanguagesoptions['languages_event_enter_phone'];
+		}
+		if($wplanguagesoptions['languages_event_enter_terms'])
+		{
+			$event_enter_terms=$wplanguagesoptions['languages_event_enter_terms'];
+		}
+        if($wplanguagesoptions['languages_event_customer_name'])
+		{
+			$event_customer_name=$wplanguagesoptions['languages_event_customer_name'];
+		}			
+        if($wplanguagesoptions['languages_event_customer_email'])
+		{
+			$event_customer_email=$wplanguagesoptions['languages_event_customer_email'];
+		}			
+        if($wplanguagesoptions['languages_event_customer_phone'])
+		{
+			$event_customer_phone=$wplanguagesoptions['languages_event_customer_phone'];
+		}		
+        if($wplanguagesoptions['languages_event_warning_message'])
+		{
+			$event_warning_message=$wplanguagesoptions['languages_event_warning_message'];
+		}	
+        if($wplanguagesoptions['languages_event_seat'])
+		{
+			$event_seat=$wplanguagesoptions['languages_event_seat'];
+		}			
+        if($wplanguagesoptions['languages_event_item_cost'])
+		{
+			$event_item_cost=$wplanguagesoptions['languages_event_item_cost'];
+		}
+		if($wplanguagesoptions['languages_offline_purchase'])
+		{
+			$offline_purchase=$wplanguagesoptions['languages_offline_purchase'];
+		}
+		if($wplanguagesoptions['languages_offline_edit_info'])
+		{
+			$offline_edit_info=$wplanguagesoptions['languages_offline_edit_info'];
+		}
+			
+	}	
+	
+	
+    $symbol = $rst_paypal_options['currencysymbol'];
+	$symbol = get_option('rst_currencysymbol');
+	$currency = get_option('rst_currency');
+    $symbols = array(
+        "0" => "$",
+        "1" => "&pound;",
+        "2" => "&euro;",
+        "3" => "&#3647;",
+        "4" => "&#8362;",
+        "5" => "&yen;");
+
+    $symbol = $symbols[$symbol];
+    //proccess the form offline if there is no active payment modules available 
+	if($_POST['action']=="row_seats_default_offlinepayment")
+	{
+	offline_payment_form_process();
+	exit;
+	}
+
+	if($_POST['action']=="wp_row_seats-signup")
+	{
+
+		header ('Content-type: text/html; charset=utf-8');
+		print "<html><body>";
+		$errors = array();
+		if(!$_POST['contact_name'])		{
+			$errors['enter_name'] = '<li>'.__($event_enter_name, 'row_seats').'</li>';		}
+		if(!$_POST['contact_email'])
+		{
+			$errors['contact_email'] = '<li>'.__($event_enter_email, 'row_seats').'</li>';
+		}
+		if(!$_POST['contact_phone'])
+		{
+			$errors['contact_phone'] = '<li>'.__($event_enter_phone, 'row_seats').'</li>';
+		}
+		if(!$_POST['rstterms'])
+		{
+			$errors['rstterms'] = '<li>'.__($event_enter_terms, 'row_seats').'</li>';
+		}
+		
+		if(count($errors)>0)
+		{
+			print "
+			<div class='row_seats_error_message'>".__($event_warning_message, 'row_seats')."
+				<ul class='row_seats_error_messages'>".implode('', $errors)."</ul>
+			</div>";
+
+		}else{ 
+
+			print "<div class='row_seats_confirmation_info'>";
+			$payment_method = trim(stripslashes($_POST["payment_method"]));
+            $data=array();
+			foreach( $_POST as $key=>$value)
+            {
+            $data[$key]=$value;
+            }	
+			
+			$data['currency']=$currency;
+					$checkout_summary = array(					
+						'contact_name' => array(
+							'title' => __($event_customer_name, 'row_seats'),
+							'value' => $_POST["contact_name"]
+						),
+						'contact_email' => array(
+							'title' => __($event_customer_email, 'row_seats'),
+							'value' => $_POST["contact_email"]
+						),
+
+						'contact_phone' => array(
+							'title' => __($event_customer_phone, 'row_seats'),
+							'value' => $_POST["contact_phone"]
+						)
+					);	
+			//Select offline mode if Admin or if there is no active payment		
+			if($_POST['payment_method']=="offlinepayment_force")
+			{	
+						$checkout_summary['payment_method'] = array(
+							'title' => __('Payment Gateway', 'wpgc'),
+							'value' => 'Offline payment'
+						);							
+			}else{
+
+						$checkout_summary['payment_method'] = array(
+							'title' => __('Payment Gateway', 'wpgc'),
+							'value' => apply_filters('row_seats_payment_logo', '', $payment_method)
+						);	
+
+
+			}			
+			//Fetching cart products
+			$cartitems = unserialize(base64_decode($_POST['mycartitems']));
+			$subtotal=0; 		
+			for ($i = 0; $i < count($cartitems); $i++) {
+				$name ="Seat:".$cartitems[$i]['row_name'] . $rst_booking[$i]['seatno'];
+				$price=$cartitems[$i]['price'];
+				if($rst_options['rst_enable_special_pricing']=="on" and row_seats_special_pricing_verification())
+				{
+					$myproductsarraytemp=split("#",$_POST['special_pricing'.$i]);
+					$name.=" - ".$myproductsarraytemp[0];
+					$price=$myproductsarraytemp[1];
+				}
+				$subtotal+=$price;
+				$price=$price;
+				$checkout_summary['cartproducts'.$i] = array(
+											'title' => __($name, 'row_seats'),
+											'value' => $symbol.number_format($price, 2, ".", "")
+										);
+			}	
+					
+
+			echo '<table class="row_seats__confirmation_table">';
+
+			foreach($checkout_summary as $info) {
+
+				echo '	<tr>
+						<td class="row_seats__confirmation_title">'.$info['title'].':</td>
+						<td class="row_seats__confirmation_data">'.$info['value'].'</td>
+					</tr>';
+
+			}
+
+
+			
+			if($_POST['fee_name'] && $_POST['rst_fees'])	
+			{
+				echo '	<tr>
+						<td class="row_seats__confirmation_title">'.$_POST['fee_name'].':</td>
+						<td class="row_seats__confirmation_data">'.$symbol.number_format($_POST['rst_fees'], 2, ".", "").'</td>
+					</tr>';
+
+			}
+			if($_POST['coupondiscount'] && $_POST['appliedcoupon'] && $_POST['statusofcouponapply']=="success")	
+			{
+				echo '	<tr>
+						<td class="row_seats__confirmation_title">Coupon ('.$_POST['appliedcoupon'].'):</td>
+						<td class="row_seats__confirmation_data">'.$symbol.number_format($_POST['coupondiscount'], 2, ".", "").'</td>
+					</tr>';
+
+			}
+			if($_POST['amount'] && $_POST['amount'])	
+			{
+				echo '	<tr>
+						<td class="row_seats__confirmation_title"><b>Grand Total:</b></td>
+						<td class="row_seats__confirmation_data"><b>'.$symbol.number_format($_POST['amount'], 2, ".", "").'</b></td>
+					</tr>';
+
+			}			
+
+			echo '</table>';					
+			//Force offline method on 3 conditions 1. If admin, 2. If there is no active payment gateway 3. If total amount is ZERO					
+			if($_POST['payment_method']=="offlinepayment_force" || $_POST['amount']==0)
+			{
+			$data['payment_method']="offlinepayment_force";
+			offline_payment_form($data);
+			}else{
+			do_action('row_seats_echo_payment_form', $data);
+			}			
+			
+
+		    //Genrating checkout buttons
+			$buttons = array(					
+
+				'purchase' => array(
+					'title' => __($offline_purchase, 'row_seats'),
+					'onclick' => "savebookingcustom();"
+				),
+				'edit' => array(
+					'title' => __($offline_edit_info, 'row_seats'),
+					'onclick' => "row_seats_edit();"
+				)
+			);
+
+			echo '
+			<div class="row_seats_signup_buttons">';
+					foreach($buttons as $key => $button) {
+						echo '<input type="button" id="'.$prefix.$key.'" class="row_seats_submit" value="'.esc_attr($button['title']).'" '.(!empty($button['onclick']) ? ' onclick="'.$button['onclick'].'"' : '').'>';
+					}
+					echo '<img id="'.$prefix.'loading2" class="row_seats_loading" src="'.plugins_url('/images/loading.gif', __FILE__).'" alt=""></div>';
+			
+			print "</div>";
+		}
+		print "</body></html>";
+		exit;
+	}
+}
 function row_seats_special_pricing_verification()
 {
     $installedplugins = get_option('active_plugins');
@@ -68,7 +522,9 @@ function adminMenu()
 
     add_menu_page(__('Row Seats', 'menu-test'), __('Row Seats', 'menu-test'), $capability, 'rst-intro', 'rst_intro_page', RSTPLN_URL . 'images/row-seat-ico.png');
     add_submenu_page('rst-intro', __('Row Seats Settings', 'menu-test'), __('Row Seats Settings', 'menu-test'), $capability_for_settings, 'rst-settings', 'rst_settings');
+	add_submenu_page('rst-intro', __('Payment Settings', 'menu-test'), __('Payment Settings', 'menu-test'), $capability_for_settings, 'rst-pay-settings', 'rst_pay_settings');
     add_submenu_page('rst-intro', __('Manage Seats', 'menu-test'), __('Manage Seats', 'menu-test'), $capability, 'rst-manage-seats', 'rst_manage_seats');
+	add_submenu_page('rst-intro', __('Transactions', 'menu-test'), __('Transactions', 'menu-test'), $capability, 'rst-transactions', 'rst_transactions');
     add_submenu_page('rst-intro', __('Month Calender', 'menu-test'), __('Month Calender', 'menu-test'), $capability, 'rst-manage-seats-moncal', 'rst_manage_seats_moncalender');
     add_submenu_page('rst-intro', __('Reports', 'menu-test'), __('Reports', 'menu-test'), $capability, 'rst-reports', 'rst_reports');
 }
@@ -97,6 +553,81 @@ global $screenspacing;
     $currenturl = curPageURL();
 
     $rst_paypal_options = get_option(RSTPLN_PPOPTIONS);
+	$wplanguagesoptions = get_option(RSTLANGUAGES_OPTIONS);
+	$event_name_title="Event name";
+	$event_booking_closed="*Online Booking is Closed, We Appreciate Your Patronage!";
+	$booking_warning="Online booking will close {DURATION} prior to engagement";
+	$event_booking_warning1="Online booking will close";
+	$event_booking_warning2="prior to engagement";
+	$event_datetime="Event Date & Time";
+	$event_venue="Venue";
+	$event_empty_warning="YOUR CART WILL EMPTY IF IDLE FOR 7MIN.";
+	$event_view_cart="View Cart";
+	$event_seat_processing="Processing.....";
+	$coupon_apply_memberid="Apply Member ID";
+	$coupon_apply_coupon="Apply Coupon";
+	$coupon_enter_memberid="Enter Member ID";
+
+	
+	if($wplanguagesoptions['rst_enable_languages']=="on")
+	{
+		if($wplanguagesoptions['languages_event_name'])
+		{
+			$event_name_title=$wplanguagesoptions['languages_event_name'];
+		}
+		if($wplanguagesoptions['languages_booking_closed'])
+		{
+			$event_booking_closed=$wplanguagesoptions['languages_booking_closed'];
+		}		
+		if($wplanguagesoptions['languages_booking_warning1'])
+		{
+			//$event_booking_closed=$wplanguagesoptions['languages_booking_warning1'];
+		}		
+		if($wplanguagesoptions['languages_booking_warning2'])
+		{
+			//$event_booking_closed=$wplanguagesoptions['languages_booking_warning2'];
+		}		
+		if($wplanguagesoptions['languages_event_datetime'])
+		{
+			$event_datetime=$wplanguagesoptions['languages_event_datetime'];
+		}	
+		if($wplanguagesoptions['languages_event_venue'])
+		{
+			$event_venue=$wplanguagesoptions['languages_event_venue'];
+		}	
+		if($wplanguagesoptions['languages_event_empty_warning'])
+		{
+			$event_empty_warning=$wplanguagesoptions['languages_event_empty_warning'];
+		}		
+		if($wplanguagesoptions['languages_event_view_cart'])
+		{
+			$event_view_cart=$wplanguagesoptions['languages_event_view_cart'];
+		}	
+		if($wplanguagesoptions['languages_booking_warning'])
+		{
+			$booking_warning=$wplanguagesoptions['languages_booking_warning'];
+		}	
+
+		if($wplanguagesoptions['languages_event_seat_processing'])
+		{
+			$event_seat_processing=$wplanguagesoptions['languages_event_seat_processing'];
+		}	
+	
+		if($wplanguagesoptions['languages_coupon_apply_memberid'])
+		{
+			$coupon_apply_memberid=$wplanguagesoptions['languages_coupon_apply_memberid'];
+		}			
+		if($wplanguagesoptions['languages_coupon_apply_coupon'])
+		{
+			$coupon_apply_coupon=$wplanguagesoptions['languages_coupon_apply_coupon'];
+		}		
+	    if($wplanguagesoptions['languages_coupon_enter_memberid'])
+		{
+			$coupon_enter_memberid=$wplanguagesoptions['languages_coupon_enter_memberid'];
+		}			
+		
+			
+	}
 
     $return_page = $rst_paypal_options['custom_return'];
     if ($return_page != '') {
@@ -116,9 +647,10 @@ global $screenspacing;
 
     $paymentsuccess = "";
 
-    if (isset($_POST) && $_POST['custom'] != '') {
-        $paymentsuccess = succesrstsmessage();
-    }
+    //if (isset($_POST) && $_POST['custom'] != '') {
+     //   $paymentsuccess = succesrstsmessage();
+   // }
+	
 
     $screenspacing=1;
     if($rst_options['rst_zoom'])
@@ -148,6 +680,7 @@ global $screenspacing;
 
     ?>
 <!--qwe-->
+   
     <div style="width: <?php echo $divwidth;?>px; <?php echo $style; ?>">
     <script type="text/javascript">
         var RSTPLN_CKURL = '<?php echo RSTPLN_CKURL?>';
@@ -155,16 +688,18 @@ global $screenspacing;
     </script>
     <script type='text/javascript' src='<?php echo RSTPLN_JALURL ?>jquery.alerts.js'></script>
     <script type='text/javascript' src='<?php echo RSTPLN_URL ?>js/jquery.blockUI.js'></script>
+<script type='text/javascript' src='<?php echo RSTPLN_URL ?>js/row_seats.js'></script>
     <link rel="stylesheet" type="text/css" media="all" href="<?php echo RSTPLN_JALURL ?>jquery.alerts.css"/>
     <?php
-    if ($type == 'offline') {
-        $stylecss = 'lite.css';
+   // if ($type == 'offline') {
+    //    $stylecss = 'lite.css';
 
-    }
+   // }
     ?>
    
     
     <link rel="stylesheet" type="text/css" media="all" href="<?php echo RSTPLN_CSSURL . $stylecss ?>"/>
+	<link rel="stylesheet" type="text/css" media="all" href="<?php echo RSTPLN_CSSURL . 'common.css' ?>"/>
     
     <style>
 
@@ -195,6 +730,9 @@ ul.r li {
     <script type='text/javascript' src='<?php echo RSTPLN_COKURL ?>jquery.cookie.js'></script>
     <script type="text/javascript" src="<?php echo RSTPLN_IDLKURL ?>jquery.countdown.js"></script>
     <script type="text/javascript" src="<?php echo RSTPLN_IDLKURL ?>idle-timer.js"></script>
+ <?
+wp_enqueue_script('jquery');
+?> 
     <link rel="stylesheet" type="text/css" media="all" href="<?php echo RSTPLN_IDLKURL ?>jquery.countdown.css"/>
 
     <input type="hidden" name="startedcheckout" id="startedcheckout" value=""/>
@@ -224,18 +762,22 @@ ul.r li {
     } else {
         $prefixh = 'hr';
     }
+	//$checking_string="stopsonlinebooking =".$stopsonlinebooking." and type=".$type."<br><br>";
     if ($stopsonlinebooking == 0) {
         $stopsonlinebooking = '';
     } else {
-        $stopsonlinebooking = " (Online booking will close $stopsonlinebooking $prefixh prior to engagement)";
+	     $booking_warning=str_replace('{DURATION}',$stopsonlinebooking." ".$prefixh,$booking_warning);
+        $stopsonlinebooking = " ($booking_warning)";
     }
     if ($type == 'offline') {
-        $stopsonlinebooking = '';
+      //  $stopsonlinebooking = '';
     }
     $currenttime = current_time('mysql', 0);
-    if ($currentdate >= $eventdate1 && $type != 'offline') {
 
-        echo   '<div><br/><strong>*Online Booking is Closed, We Appreciate Your Patronage!</strong></div></div>';
+	//if ($currentdate >= $eventdate1 && $type != 'offline') {
+    if ($currentdate >= $eventdate1) {
+
+        echo   '<div><br/><strong>'.$event_booking_closed.'</strong></div></div>';
 
     } else {
 
@@ -245,18 +787,18 @@ ul.r li {
         // showcart ----->
         $html .= "<a name='show_top'></a><div class='showchart'><div style='width:".(int)(640 * $rst_options['rst_zoom'])."px; margin: 0 auto;'><div class='showchart paymentsucess'>$paymentsuccess</div>
 
-        <div style='float:left;color:#f21313;'>YOUR CART WILL EMPTY IF IDLE FOR 7MIN.&nbsp;&nbsp;</div>
+        <div style='float:left;color:#f21313;'>$event_empty_warning &nbsp;&nbsp;</div>
 
         <div id='defaultCountdown' ></div>
 
         </div><div id='eventdetails' >
 
-        Event Name:$eventname <br/>
+        $event_name_title:$eventname <br/>
 
-        Event Date & Time: $eventdate  $stopsonlinebooking.<br/>
+        $event_datetime: $eventdate  ".$stopsonlinebooking.".<br/>
 
-        Venue:$venue<br/>
-        <a style='margin-left:0px;' href='#view_cart'>View Cart</a> <div style='float:left'>
+        $event_venue:$venue<br/>
+        <a style='margin-left:0px;' href='#view_cart'>$event_view_cart</a> <div style='float:left'>
 
         </div></div></div>";
         // <----- showcart
@@ -264,8 +806,9 @@ ul.r li {
         $html .= "<div id='showprview' class='localcss' align='center' style='width:100%; margin-left: auto;margin-right: auto;' >";
 
         ?>
-
+        
         <script>
+	
         var regtype = '<?php echo $type?>';
         var offlineAdmin = '<?php echo $offlineAdmin?>';
 
@@ -374,7 +917,7 @@ ul.r li {
 
             jQuery('#showprview').block({
 
-                message: 'Processing.....',
+                message: '<?php echo $event_seat_processing;?>',
                 css: { border: '3px solid #a00' }
 
             });
@@ -537,6 +1080,88 @@ return (((sign) ? '' : '-') + '' + num + '.' + cents);
 //Javascript function to format currency - end
 
 
+function savebookingcustom()
+
+{
+
+<?php
+
+
+
+	
+if($rst_options['rst_enable_special_pricing']=="on" and row_seats_special_pricing_verification())
+{
+
+?>	
+	//Sending special price to ajax call for saving....	
+	var totalitems=document.getElementById('totalrecords').value;
+	var mycartproducts;
+	for (var i=0; i<totalitems; i++)
+	{
+	var dropboxvalue=document.getElementById('special_pricing'+i).value;
+	if(i==0)
+	{
+	mycartproducts=dropboxvalue;
+	}else{
+	mycartproducts=mycartproducts+"__"+dropboxvalue;
+	}
+	}
+
+<?php }else{?>
+
+var mycartproducts;
+
+<?php } ?>
+
+                document.getElementById('couponprogress').innerHTML = '<img src="<?php echo RSTPLN_URL;?>images/couponwait.gif" width="20" style="border:none !important;"/>';
+				jQuery('.row_seats_loading').show();
+
+                if (regtype == 'offline') {
+                    regstatus = 'offline_registration';
+                } else if (regtype == 'zero') {
+                    regstatus = 'free_booking';
+                }
+                else {
+                    regstatus = 'pending_paypal';
+                }
+
+
+
+                jQuery.post('<?php echo RSTAJAXURL?>',
+                    {
+                        action: 'savebooking',
+                        name: document.getElementById('contact_name').value,
+                        email: document.getElementById('contact_email').value,
+                        phone: document.getElementById('contact_phone').value,
+						bookingid: document.getElementById('bookingid').value,
+                        status: regstatus,
+						myproducts: mycartproducts,
+                        redirecturl: document.getElementById('redirecturl').value,
+                        cartiterms: jQuery.cookie("rst_cart_<?php echo $showid?>")
+                    },
+
+                    function (rmsg) {
+						var finalstring;
+						document.getElementById('x_invoice_num').value = rmsg;	
+						document.getElementById('item_number').value = rmsg;	
+						document.getElementById('bookingid').value = rmsg;
+                            if (document.getElementById('statusofcouponapply').value == 'success')
+                                finalstring = rmsg + '__' + document.getElementById('couponcode').value + '__' + document.getElementById('coupondiscount').value + '__' + document.getElementById('numberoffreecoupons').value + '__' + document.getElementById('rst_fees').value;
+                            else
+                                finalstring = rmsg + '__'+' '+'__0__0__' + document.getElementById('rst_fees').value;	
+						   document.getElementById('x_custom').value = finalstring;
+					  jQuery.cookie("rst_cart_<?php echo $showid?>", null);  
+                      jQuery('#rsbuynow').click();						   
+		  
+		  return;
+			
+                    });
+		    
+		    
+
+}
+
+
     function savecheckoutdata(id) {
 var mycartproducts;	
 <?php
@@ -559,7 +1184,11 @@ if($rst_options['rst_enable_special_pricing']=="on" and row_seats_special_pricin
 	}
 	}
 
-<?php }?>	
+<?php }else{?>
+
+var mycartproducts;
+
+<?php } ?>
 
 	
 
@@ -614,7 +1243,50 @@ if($rst_options['rst_enable_special_pricing']=="on" and row_seats_special_pricin
 			
 	
 
-	
+            if (id == 'placeordernew') {
+
+                document.getElementById('couponprogress').innerHTML = '<img src="<?php echo RSTPLN_URL;?>images/couponwait.gif" width="20" style="border:none !important;"/>';
+
+               
+	       //jQuery(".QTPopup").css('display', 'none');
+
+                jQuery('#showprview').block({
+
+                    message: '<?php echo $event_seat_processing;?>',
+                    css: { border: '3px solid #a00' }
+
+                });
+                if (regtype == 'offline') {
+                    regstatus = 'offline_registration';
+                } else if (regtype == 'zero') {
+                    regstatus = 'free_booking';
+                }
+                else {
+                    regstatus = 'pending_paypal';
+                }
+
+
+
+                jQuery.post('<?php echo RSTAJAXURL?>',
+                    {
+                        action: 'savebooking',
+                        name: document.getElementById('contact_name').value,
+                        email: document.getElementById('contact_email').value,
+                        phone: document.getElementById('contact_phone').value,
+                        status: regstatus,
+						myproducts: mycartproducts,
+                        redirecturl: document.getElementById('redirecturl').value,
+                        cartiterms: jQuery.cookie("rst_cart_<?php echo $showid?>")
+                    },
+
+                    function (msg) {
+		    
+		    //document.getElementById('stripe_code').value =msg;
+		    alert('Successfully Booked! eTicket Sent To Your Email.');
+			return;
+                    });
+return;	    
+}		    
 
             if (id == 'placeorder') {
 
@@ -624,7 +1296,7 @@ if($rst_options['rst_enable_special_pricing']=="on" and row_seats_special_pricin
 
                 jQuery('#showprview').block({
 
-                    message: 'Processing.....',
+                    message: '<?php echo $event_seat_processing;?>',
                     css: { border: '3px solid #a00' }
 
                 });
@@ -766,6 +1438,7 @@ if($rst_options['rst_enable_special_pricing']=="on" and row_seats_special_pricin
                             } else {
                                 if (couponresult[1] == '0.00') {
                                     regtype = 'zero';
+									document.getElementById('numberoffreecoupons').value = couponresult[3];
                                 } else if (regtype != 'offline') {
                                     regtype = 'applyedfreecoupons';
                                     document.getElementById('numberoffreecoupons').value = couponresult[3];
@@ -957,10 +1630,10 @@ if($rst_options['rst_enable_special_pricing']=="on" and row_seats_special_pricin
         function checkformember(obj) {
             var isChecked = jQuery('#rstmem').attr('checked') ? true : false;
             if (isChecked) {
-                jQuery('#couponapplybtn').html('Apply Member ID');
-                jQuery('#couponcode').val('Enter Member ID');
+                jQuery('#couponapplybtn').html('<?php echo $coupon_apply_memberid;?>');
+                jQuery('#couponcode').val('<?php echo $coupon_enter_memberid;?>');
             } else {
-                jQuery('#couponapplybtn').html('Apply Coupon');
+                jQuery('#couponapplybtn').html('<?php echo $coupon_apply_coupon;?>');
                 jQuery('#couponcode').val('');
             }
         }
@@ -1139,13 +1812,17 @@ function rst_shows_operations($action, $data, $currentcart)
             } else {
                 $papalmode = 'Live';
             }
-
+            if($data['bookingid'])
+	    {
+	    $wpdb->query("UPDATE  $wpdb->rst_bookings SET rst_session_id='$rst_session_id',paypal_vars='$paypal_vars',booking_time=booking_time,payment_status='$status',name='$username',email='$useremail',phone=$phone,paypal_mode=$papalmode WHERE booking_id=" . $data['bookingid']);
+	    return $data['bookingid'];
+	    }else{
             $sql = "INSERT INTO $wpdb->rst_bookings (show_id,rst_session_id,paypal_vars,booking_time,booking_details,payment_status,name,email,phone,paypal_mode,ticket_no)
             VALUES ($showid, '$rst_session_id', '$paypal_vars',now(),'$booking_detail','$status','$username','$useremail','$phone','$papalmode','')";
             // ,rst_session_id,paypal_vars,booking_time,booking_details,payment_status,name,email,phone
             $wpdb->query($sql);
-
             return mysql_insert_id();
+	    }
 
             break;
 
@@ -1647,9 +2324,67 @@ global $screenspacing;
     $rst_paypal_options = get_option(RSTPLN_PPOPTIONS);
     $rst_options = get_option(RSTPLN_OPTIONS);
 
+	
+
+
+	$wplanguagesoptions = get_option(RSTLANGUAGES_OPTIONS);
+	$event_seat="Seat";
+	$event_price="Price1";
+	$event_seat_available="Available";
+	$event_seat_booked="Booked";
+	$event_seat_handicap="Handicap Accomodation";
+	$event_stall="STALL";
+	$event_balcony="BALCONY";
+	$event_circle="CIRCLE";
+	$event_seat_blocked="Blocked";
+	
+	if($wplanguagesoptions['rst_enable_languages']=="on")
+	{
+		if($wplanguagesoptions['languages_event_seat'])
+		{
+			$event_seat=$wplanguagesoptions['languages_event_seat'];
+		}
+		if($wplanguagesoptions['languages_event_price'])
+		{
+			$event_price=$wplanguagesoptions['languages_event_price'];
+		}	
+		if($wplanguagesoptions['languages_event_seat_available'])
+		{
+			$event_seat_available=$wplanguagesoptions['languages_event_seat_available'];
+		}
+		if($wplanguagesoptions['languages_event_seat_blocked'])
+		{
+			$event_seat_blocked=$wplanguagesoptions['languages_event_seat_blocked'];
+		}		
+		if($wplanguagesoptions['languages_event_seat_booked'])
+		{
+			$event_seat_booked=$wplanguagesoptions['languages_event_seat_booked'];
+		}	
+		if($wplanguagesoptions['languages_event_seat_handicap'])
+		{
+			$event_seat_handicap=$wplanguagesoptions['languages_event_seat_handicap'];
+		}	
+		if($wplanguagesoptions['languages_event_stall'])
+		{
+			$event_stall=$wplanguagesoptions['languages_event_stall'];
+		}			
+		if($wplanguagesoptions['languages_event_balcony'])
+		{
+			$event_balcony=$wplanguagesoptions['languages_event_balcony'];
+		}
+		if($wplanguagesoptions['languages_event_circle'])
+		{
+			$event_circle=$wplanguagesoptions['languages_event_circle'];
+		}		
+	}
+
+
+	
+	
 
     $symbol = $rst_paypal_options['currencysymbol'];
-
+	
+$symbol = get_option('rst_currencysymbol');
     $symbols = array(
         "0" => "$",
         "1" => "&pound;",
@@ -1695,51 +2430,80 @@ global $screenspacing;
         $data = $seats[$i];
         $nofsets = $data['total_seats_per_row'];
         $nofsets = floor($nofsets / 2);
-        $stall[$nofsets] = 'S';
-        $stall[$nofsets + 1] = 'T';
-        $stall[$nofsets + 2] = 'A';
-        $stall[$nofsets + 3] = 'L';
-        $stall[$nofsets + 4] = 'L';
+		
+//print "----------------------".strlen($event_stall);
+//$event_stall=strrev($event_stall);
+for ($z=0;$z<strlen($event_stall);$z++) {
+$stall[$nofsets+$z]=$event_stall[$z];
+}
+		
+        //$stall[$nofsets] = 'S';
+        //$stall[$nofsets + 1] = 'T';
+        //$stall[$nofsets + 2] = 'A';
+       // $stall[$nofsets + 3] = 'L';
+       // $stall[$nofsets + 4] = 'L';
         ///
 
         if ($showorder != 0) {
-            $stall[$nofsets] = 'L';
-            $stall[$nofsets + 1] = 'L';
-            $stall[$nofsets + 2] = 'A';
-            $stall[$nofsets + 3] = 'T';
-            $stall[$nofsets + 4] = 'S';
+$event_stall=strrev($event_stall);
+for ($z=0;$z<strlen($event_stall);$z++) {
+$stall[$nofsets+$z]=$event_stall[$z];
+}		
+		
+            //$stall[$nofsets] = 'L';
+            //$stall[$nofsets + 1] = 'L';
+            //$stall[$nofsets + 2] = 'A';
+            //$stall[$nofsets + 3] = 'T';
+            //$stall[$nofsets + 4] = 'S';
         }
-
-        $balcony[$nofsets] = 'B';
-        $balcony[$nofsets + 1] = 'A';
-        $balcony[$nofsets + 2] = 'L';
-        $balcony[$nofsets + 3] = 'C';
-        $balcony[$nofsets + 4] = 'O';
-        $balcony[$nofsets + 5] = 'N';
-        $balcony[$nofsets + 6] = 'Y';
+//$event_stall=strrev($event_stall);
+for ($z=0;$z<strlen($event_balcony);$z++) {
+$balcony[$nofsets+$z]=$event_balcony[$z];
+}	
+		
+        //$balcony[$nofsets] = 'B';
+       // $balcony[$nofsets + 1] = 'A';
+        //$balcony[$nofsets + 2] = 'L';
+        //$balcony[$nofsets + 3] = 'C';
+       // $balcony[$nofsets + 4] = 'O';
+       // $balcony[$nofsets + 5] = 'N';
+       // $balcony[$nofsets + 6] = 'Y';
         if ($showorder != 0) {
-            $balcony[$nofsets] = 'Y';
-            $balcony[$nofsets + 1] = 'N';
-            $balcony[$nofsets + 2] = 'O';
-            $balcony[$nofsets + 3] = 'C';
-            $balcony[$nofsets + 4] = 'L';
-            $balcony[$nofsets + 5] = 'A';
-            $balcony[$nofsets + 6] = 'B';
+		
+$event_balcony=strrev($event_balcony);
+for ($z=0;$z<strlen($event_balcony);$z++) {
+$balcony[$nofsets+$z]=$event_balcony[$z];
+}			
+           // $balcony[$nofsets] = 'Y';
+            //$balcony[$nofsets + 1] = 'N';
+            //$balcony[$nofsets + 2] = 'O';
+            //$balcony[$nofsets + 3] = 'C';
+            //$balcony[$nofsets + 4] = 'L';
+            //$balcony[$nofsets + 5] = 'A';
+            //$balcony[$nofsets + 6] = 'B';
         }
         //
-        $circle[$nofsets] = 'C';
-        $circle[$nofsets + 1] = 'I';
-        $circle[$nofsets + 2] = 'R';
-        $circle[$nofsets + 3] = 'C';
-        $circle[$nofsets + 4] = 'L';
-        $circle[$nofsets + 5] = 'E';
+//$event_balcony=strrev($event_balcony);
+for ($z=0;$z<strlen($event_circle);$z++) {
+$circle[$nofsets+$z]=$event_circle[$z];
+}			
+        //$circle[$nofsets] = 'C';
+       // $circle[$nofsets + 1] = 'I';
+       // $circle[$nofsets + 2] = 'R';
+       // $circle[$nofsets + 3] = 'C';
+       // $circle[$nofsets + 4] = 'L';
+       // $circle[$nofsets + 5] = 'E';
         if ($showorder != 0) {
-            $circle[$nofsets] = 'E';
-            $circle[$nofsets + 1] = 'L';
-            $circle[$nofsets + 2] = 'C';
-            $circle[$nofsets + 3] = 'R';
-            $circle[$nofsets + 4] = 'I';
-            $circle[$nofsets + 5] = 'C';
+$event_circle=strrev($event_circle);
+for ($z=0;$z<strlen($event_circle);$z++) {
+$circle[$nofsets+$z]=$event_circle[$z];
+}		
+            //$circle[$nofsets] = 'E';
+            //$circle[$nofsets + 1] = 'L';
+           // $circle[$nofsets + 2] = 'C';
+            //$circle[$nofsets + 3] = 'R';
+           // $circle[$nofsets + 4] = 'I';
+           // $circle[$nofsets + 5] = 'C';
         }
 
         $rowname = $data['row_name'];
@@ -1793,19 +2557,19 @@ global $screenspacing;
 
         if ($data['seattype'] == 'N') {
 
-            $html .= '<li class="un showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="Seat ' . $rowname . ($seatno) . ' Unavailable" rel="' . $data['seattype'] . '"></li>';
+            $html .= '<li class="un showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$event_seat.' ' . $rowname . ($seatno) . ' Unavailable" rel="' . $data['seattype'] . '"></li>';
 
         } else if ($data['seattype'] == 'Y') {
 
-            $html .= '<li class="notbooked showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="Seat ' . $rowname . ($seatno) . ' Price ' . $symbol . $seatcost . ' Available" rel="' . $data['seattype'] . '">' . ($seatno) . '</li>';
+            $html .= '<li class="notbooked showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$event_seat.' ' . $rowname . ($seatno) . ' '.$event_price.' ' . $symbol . $seatcost . ' '.$event_seat_available.'" rel="' . $data['seattype'] . '">' . ($seatno) . '</li>';
 
         } else if ($data['seattype'] == 'H') {
 
-            $html .= '<li class="handy showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="Seat ' . $rowname . ($seatno) . ' Handicap Accomodation ' . $symbol . $dicount . ' " rel="' . $data['seattype'] . '">' . $seatno . '</li>';
+            $html .= '<li class="handy showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$event_seat.' ' . $rowname . ($seatno) . ' '.$event_seat_handicap.' ' . $symbol . $dicount . ' " rel="' . $data['seattype'] . '">' . $seatno . '</li>';
 
         } else if ($data['seattype'] == 'B') {
 
-            $html .= '<li class="booked showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="Seat ' . $rowname . ($seatno) . ' Booked" rel="' . $data['seattype'] . '">' . $seatno . '</li>';
+            $html .= '<li class="booked showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$event_seat.' ' . $rowname . ($seatno) . ' '.$event_seat_booked.'" rel="' . $data['seattype'] . '">' . $seatno . '</li>';
 
         } else if ($data['seattype'] == 'T') {
 
@@ -1821,11 +2585,11 @@ global $screenspacing;
 
             if ($otherscart) {
 
-                $html .= '<li class="blocked showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="Seat ' . $rowname . ($seatno) . '" rel="' . $data['seattype'] . '">' . $seatno . '</li>';
+                $html .= '<li class="blocked showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$event_seat.' ' . $rowname . ($seatno) . '" rel="' . $data['seattype'] . '">' . $seatno . '</li>';
 
             } else {
 
-                $html .= '<li class="b showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="Seat ' . $rowname . ($seatno) . '  Blocked" rel="' . $data['seattype'] . '">' . $seatno . '</li>';
+                $html .= '<li class="b showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$event_seat.' ' . $rowname . ($seatno) . '  '.$event_seat_blocked.'" rel="' . $data['seattype'] . '">' . $seatno . '</li>';
 
             }
 
@@ -2099,6 +2863,145 @@ function gettheseatchartAjax($showid, $currenturl, $bookings, $offline = '')
 
 global $screenspacing;
 
+	$wplanguagesoptions = get_option(RSTLANGUAGES_OPTIONS);
+
+	$event_seat_available="Available";
+	$event_seat_inyourcart="In Your Cart";
+	$event_seat_inotherscart="In Other&#39;s Cart";
+	$event_seat_booked="Booked";
+	$event_seat_handicap="Handicap Accomodation";
+	$event_itemsincart="Items in Cart";
+    $event_item_cost="Cost";
+	$event_item_total="Total";
+	$event_item_grand="Grand";
+	$event_item_checkout="Checkout";
+	$event_item_clearcart="Clear Cart";
+	$event_bookingdetails="Booking Details ";
+	$event_customer_name="Name";
+	$event_customer_email="Email";
+	$event_customer_phone="Phone";
+	$event_terms="I Agree Terms & Conditions";
+	$cart_is_empty="CART IS EMPTY";
+	$event_seat="Seat";
+	$event_item_cost="Cost";
+	$button_continue="Continue";
+	$languages_added="Added";
+	$event_stall="STALL";
+	$event_balcony="BALCONY";
+	$event_circle="CIRCLE";	
+	$event_seat_stage="STAGE";	
+	$coupon_vip_member="I am a VIP Member";
+	
+	if($wplanguagesoptions['rst_enable_languages']=="on")
+	{
+		if($wplanguagesoptions['languages_event_seat_available'])
+		{
+			$event_seat_available=$wplanguagesoptions['languages_event_seat_available'];
+		}
+		if($wplanguagesoptions['languages_event_seat_inyourcart'])
+		{
+			$event_seat_inyourcart=$wplanguagesoptions['languages_event_seat_inyourcart'];
+		}	
+		if($wplanguagesoptions['languages_event_seat_inotherscart'])
+		{
+			$event_seat_inotherscart=$wplanguagesoptions['languages_event_seat_inotherscart'];
+		}	
+		if($wplanguagesoptions['languages_event_seat_booked'])
+		{
+			$event_seat_booked=$wplanguagesoptions['languages_event_seat_booked'];
+		}	
+		if($wplanguagesoptions['languages_event_seat_handicap'])
+		{
+			$event_seat_handicap=$wplanguagesoptions['languages_event_seat_handicap'];
+		}	
+		if($wplanguagesoptions['languages_event_itemsincart'])
+		{
+			$event_itemsincart=$wplanguagesoptions['languages_event_itemsincart'];
+		}			
+		if($wplanguagesoptions['languages_event_item_cost'])
+		{
+			$event_item_cost=$wplanguagesoptions['languages_event_item_cost'];
+		}	
+		if($wplanguagesoptions['languages_event_item_total'])
+		{
+			$event_item_total=$wplanguagesoptions['languages_event_item_total'];
+		}
+		if($wplanguagesoptions['languages_event_item_grand'])
+		{
+			$event_item_grand=$wplanguagesoptions['languages_event_item_grand'];
+		}		
+		if($wplanguagesoptions['languages_event_item_checkout'])
+		{
+			$event_item_checkout=$wplanguagesoptions['languages_event_item_checkout'];
+		}
+		if($wplanguagesoptions['languages_event_item_clearcart'])
+		{
+			$event_item_clearcart=$wplanguagesoptions['languages_event_item_clearcart'];
+		}
+		if($wplanguagesoptions['languages_event_bookingdetails'])
+		{
+			$event_bookingdetails=$wplanguagesoptions['languages_event_bookingdetails'];
+		}			
+        if($wplanguagesoptions['languages_event_customer_name'])
+		{
+			$event_customer_name=$wplanguagesoptions['languages_event_customer_name'];
+		}			
+        if($wplanguagesoptions['languages_event_customer_email'])
+		{
+			$event_customer_email=$wplanguagesoptions['languages_event_customer_email'];
+		}			
+        if($wplanguagesoptions['languages_event_customer_phone'])
+		{
+			$event_customer_phone=$wplanguagesoptions['languages_event_customer_phone'];
+		}			
+        if($wplanguagesoptions['languages_event_customer_terms'])
+		{
+			$event_terms=$wplanguagesoptions['languages_event_customer_terms'];
+		}			
+         if($wplanguagesoptions['languages_cart_is_empty'])
+		{
+			$cart_is_empty=$wplanguagesoptions['languages_cart_is_empty'];
+		}	
+        if($wplanguagesoptions['languages_event_seat'])
+		{
+			$event_seat=$wplanguagesoptions['languages_event_seat'];
+		}			
+        if($wplanguagesoptions['languages_event_item_cost'])
+		{
+			$event_item_cost=$wplanguagesoptions['languages_event_item_cost'];
+		}	
+        if($wplanguagesoptions['languages_button_continue'])
+		{
+			$button_continue=$wplanguagesoptions['languages_button_continue'];
+		}	
+        if($wplanguagesoptions['languages_added'])
+		{
+			$languages_added=$wplanguagesoptions['languages_added'];
+		}	
+		if($wplanguagesoptions['languages_event_stall'])
+		{
+			$event_stall=$wplanguagesoptions['languages_event_stall'];
+		}			
+		if($wplanguagesoptions['languages_event_balcony'])
+		{
+			$event_balcony=$wplanguagesoptions['languages_event_balcony'];
+		}
+		if($wplanguagesoptions['languages_event_circle'])
+		{
+			$event_circle=$wplanguagesoptions['languages_event_circle'];
+		}		
+		if($wplanguagesoptions['languages_event_seat_stage'])
+		{
+			$event_seat_stage=$wplanguagesoptions['languages_event_seat_stage'];
+		}	
+		if($wplanguagesoptions['languages_coupon_vip_member'])
+		{
+			$coupon_vip_member=$wplanguagesoptions['languages_coupon_vip_member'];
+		}			
+}	
+
+
+
     ?>
 
     <!-- OUR PopupBox DIV-->
@@ -2122,6 +3025,9 @@ global $screenspacing;
     $return_page = $rst_paypal_options['custom_return'];
 
     $symbol = $rst_paypal_options['currencysymbol'];
+	$symbol = get_option('rst_currencysymbol');
+	
+	//print $symbol."------------".$rst_options['rst_currency'];
 
     $symbols = array(
         "0" => "$",
@@ -2206,6 +3112,7 @@ global $screenspacing;
     $currency = $rst_paypal_options['currency'];
 
     $symbol = $rst_paypal_options['currencysymbol'];
+	$symbol = get_option('rst_currencysymbol');
 
     $symbols = array(
         "0" => "$",
@@ -2234,7 +3141,7 @@ global $screenspacing;
 
     <div class="popupGrayBg"></div>
 
-    <div class="QTPopupCntnr" style="width: 750px;">
+    <div class="QTPopupCntnr" style="width: 850px;">
 
     <div class="gpBdrLeftTop"></div>
 
@@ -2248,7 +3155,7 @@ global $screenspacing;
 
     <div class="caption">
 
-        Booking Details
+        <?php echo $event_bookingdetails;?>
 
     </div>
 
@@ -2256,8 +3163,8 @@ global $screenspacing;
 
     <div class="checkoutcontent">
 
-    <form method='POST' action='<?php echo $paypal_url; ?>' enctype='multipart/form' name="checkoutform">
-
+    <form method='POST' action='' target="rsiframe"  onsubmit="row_seats_presubmit('<?php print $showid['id'];?>');"  enctype='multipart/form' name="checkoutform">
+ <div class="row_seats_signup_form" id="rssignup_form">
     <table width="100%" cellpadding="0" cellspacing="0">
 
     <tr>
@@ -2313,7 +3220,8 @@ function updateprice()
 }			
 
             $rst_bookings = $bookings;
-
+	    //print_r($bookings);
+            $mycartitems = serialize($bookings);
             $description = $rst_bookings;
 
             $total = 0;
@@ -2352,7 +3260,7 @@ function updateprice()
 
 
                 <tr>
-                    <td width=50%">Seat:<?php echo $rst_booking['row_name'] . $rst_booking['seatno'];?>-Cost:</td>
+                    <td width=50%"><?php echo $event_seat;?>:<?php echo $rst_booking['row_name'] . $rst_booking['seatno'];?>-<?php echo $event_item_cost;?>:</td>
                     <td><table><tr><td><span style="color: maroon;font-size: small;"><?php echo $symbol;?></span><span style="color: maroon;font-size: small;" id="price<?php echo $i;?>"><?php echo $rst_booking['price'];?></span></td>
 					<td>
 					<?php
@@ -2387,7 +3295,7 @@ function updateprice()
 
 
             <tr class="carttotclass" style="border-top:1px solid #e7e7e7 !important;">
-                <td width="50%"><span style="color: maroon;font-size: larger;">Total:</span></td>
+                <td width="50%"><span style="color: maroon;font-size: larger;"><?php echo $event_item_total;?>:</span></td>
                 <td width="50%" ><span style="color: maroon;font-size: larger;"><?php echo $symbol;?></span><span
                         style="color: maroon;font-size: larger;" id="total"><?php echo $total;?></span>
                 </td>
@@ -2447,7 +3355,7 @@ function updateprice()
             <tr id="aftercoupongrand" style="border-top:1px solid #e7e7e7 !important;"
                 class="carttotclass">
 
-                <td width="50%"><span style="color: maroon;font-size: larger;"><strong>Grand:</strong></span></td>
+                <td width="50%"><span style="color: maroon;font-size: larger;"><strong><?php echo $event_item_grand;?> :</strong></span></td>
 
                 <td width="50%"><span style="color: maroon;font-size: larger;"><?php echo $symbol;?></span><span
                         style="color: maroon;font-size: larger;" id="Grandtotal"><?php echo $gtotal;?></span></td>
@@ -2459,23 +3367,24 @@ function updateprice()
     </td>
     <td class="tabright" width="60%" style="border-left:1px solid #e7e7e7 !important; ">
 
+   
         <table>
             <tr>
-                <td colspan='2'><label for='contact-name'><span class='reqa'>*</span> Name:</label>
+                <td colspan='2'><label for='contact-name'><span class='reqa'>*</span> <?php echo $event_customer_name;?>:</label>
 
                     <input type='text' id='contact_name' class='contact-input' name='contact_name'
                            value=''/></td>
             </tr>
 
             <tr>
-                <td colspan='2'><label for='contact-email'><span class='reqa'>*</span> Email:</label>
+                <td colspan='2'><label for='contact-email'><span class='reqa'>*</span> <?php echo $event_customer_email;?>:</label>
 
                     <input type='text' id='contact_email' class='contact-input' name='contact_email'
                            value=''/></td>
             </tr>
 
             <tr>
-                <td colspan='2'><label for='contact-email'><span class='reqa'>*</span> Phone:</label>
+                <td colspan='2'><label for='contact-email'><span class='reqa'>*</span> <?php echo $event_customer_phone;?>:</label>
 
                     <input type='text' id='contact_phone' class='contact-input' name='contact_phone'
                            value=''/></td>
@@ -2485,8 +3394,7 @@ function updateprice()
                 <td colspan='2'>
                     <div><input type='checkbox' id='rstterms' class='contact-input' name='rstterms'/>
 
-                        <label class='termsclass'><span class='reqa'>*</span> I Agree Terms &amp;
-                            Conditions:</label><br/><label
+                        <label class='termsclass'><span class='reqa'>*</span> <?php echo $event_terms;?>:</label><br/><label
                             style="float: left !important;width:100% !important"><?php echo stripslashes($rst_tandc); ?></label>
                     </div>
                 </td>
@@ -2504,7 +3412,7 @@ function updateprice()
                 echo "
                 <tr>
                     <td colspan='2'><input type='checkbox' id='rstmem' class='contact-input' name='rstmem' onclick=\"checkformember(this);\"/>
-                    <label class='termsclass'> I am a VIP Member:</label></td>
+                    <label class='termsclass'> ".$coupon_vip_member.":</label></td>
                 </tr>
                 ";
                 echo $coupons;
@@ -2548,17 +3456,80 @@ function updateprice()
             </tr>
 
             <tr>
-                <td colspan='2'> &nbsp;</td>
+                <td colspan='2'>&nbsp; </td>
             </tr>
-            <!--added class by mahesh 20120512-->
+	     <tr>
+                <td colspan='2'>
+<?php
+$active_payment_methods = apply_filters('row_seats_active_payment_methods', array());
+//print_r($active_payment_methods);
+$available_payment_methods = apply_filters('row_seats_available_payment_methods', array());
+//print_r($available_payment_methods);
+$activecurrency = get_option('rst_currency');
+//print $activecurrency;
+$payment_methods = apply_filters('row_seats_currency_payment_methods', $active_payment_methods, $activecurrency);
+//print_r($payment_methods);
+
+
+
+            if(current_user_can('contributor') || current_user_can('administrator'))	
+{
+//print "Inside-------------";
+			$form .= '<input type="hidden" value="offlinepayment_force" name="payment_method">';
+
+}			
+			elseif (sizeof($payment_methods) > 0) {
+
+				$form .= '
+
+				<div class="wpgc_form_row">';
+
+				$checked = ' checked="checked"';
+
+				foreach ($payment_methods as $key => $method) {
+
+					$form .= '
+
+					<div style="background: transparent url('.$method['logo'].') 25px '.$method['logo_vertical_shift'].'px no-repeat; height: 45px; width: '.($method['logo_width']+25).'px; float: left; margin-right: 30px;">
+
+						<input type="radio" value="'.$key.'" name="payment_method" style="margin: 4px 0px;"'.$checked.'>
+
+					</div>';
+
+					$checked = '';
+
+				}
+
+				$form .= '
+
+				</div>';
+
+			} else {
+			$form .= '<input type="hidden" value="offlinepayment_force" name="payment_method">';
+			
+			}
+			
+			print $form;
+
+?>		
+		
+		</td>
+            </tr>    
+	    
+            <!--added class-->
             <tr>
-                <td colspan='2'><a href="javascript:void(0);" onclick="savecheckoutdata('placeorder')"
-                                   class='srbutton srbutton-css'>Place Order</a></td>
+                <td colspan='2'><input type="submit" id="rssubmit" class="row_seats_submit" value="<?php echo $button_continue;?>" > <img id="rsloading" class="row_seats_loading" src="<?php echo plugins_url('/images/loading.gif', __FILE__);?>" alt="">
+				   
+	<!--<a href="javascript:void(0);" onclick="savecheckoutdata('placeorder')"
+                                   class='srbutton srbutton-css'>Place Order</a><img id="rsloading" class="row_seats_loading" src="'.plugins_url('/images/loading.gif', __FILE__).'" alt="">-->			   
+				   
+				   </td>
             </tr>
 
             <input type="hidden" name="cmd" value="_xclick"/>
 
             <input type="hidden" name="notify_url" value="<?php echo $notifyURL; ?>"/>
+			<input type="hidden" name="action" value="wp_row_seats-signup" />
 
             <input type="hidden" name="return" id="return" value="<?php echo $return_page ?>"/>
 
@@ -2568,23 +3539,29 @@ function updateprice()
 
 
             <input type="hidden" id="item_name" name="item_name" value="Seats Booking"/>
+	     <input type="hidden" id="bookingid" name="bookingid" value=""/>
 
             <input type="hidden" name="custom" id="custom" value=""/>
 
             <input type="hidden" name="no_shipping" value="0"/>
             <input type="hidden" name="currency_code" value="<?php echo $currency ?>"/>
-
+	    <input type="hidden" name="mycartitems"  id="mycartitems" value="<?php echo $mycartitems; ?>"/>
+	    
+	    
 
         </table>
+	    <div id="rsmessage5" class="row_seats_message"></div>
+<iframe id="rsiframe" name="rsiframe" class="row_seats_iframe" onload="row_seats_load();"></iframe>
+    
+	
+
+	
 
     </td>
     </tr>
 
     </table>
-
-
-    </form>
-
+    </div>
     <input type="hidden" name="appliedcoupon" id="appliedcoupon" value=""/>
 
     <input type="hidden" name="totalbackup" id="totalbackup" value="<?php echo esc_attr($gtotal); ?>"/>
@@ -2596,6 +3573,11 @@ function updateprice()
     <input type="hidden" name="coupondiscount" id="coupondiscount" value=""/>
     <input type="hidden" name="rst_fees" id="rst_fees" value="<?php echo esc_attr($sercharge); ?>"/>
 	<input type="hidden" name="fee_name" id="fee_name" value="<?php echo esc_attr($fee_name); ?>"/>
+
+    </form>
+    <div class="row_seats_confirmation_container" id="rsconfirmation_container2"></div>	
+
+
 
     </div>
 
@@ -2615,6 +3597,9 @@ function updateprice()
 
 
     <?php
+	
+	
+
 
     $html = '';
 
@@ -2637,20 +3622,22 @@ function updateprice()
     $showname = $data[0]['show_name'];
 
     $html .= '';
+	
+	
 
     $html .= '<div id="currentcart"><div style="width: '.(int)(640 * $rst_options['rst_zoom']).'px;">
 
-        <span class="notbooked showseats" ></span> <span class="show-text">Available </span>
+        <span class="notbooked showseats" ></span> <span class="show-text">'.$event_seat_available.'  </span>
 
-        <span class="blocked showseats" ></span> <span class="show-text">In Your Cart  </span>
+        <span class="blocked showseats" ></span> <span class="show-text">'.$event_seat_inyourcart.'  </span>
 
-       <span class="un showseats" ></span> <span class="show-text">In Other&#39;s Cart</span>
+       <span class="un showseats" ></span> <span class="show-text">'.$event_seat_inotherscart.'  </span>
 
-       <span class="booked showseats" ></span> <span class="show-text">Booked </span>
+       <span class="booked showseats" ></span> <span class="show-text">'.$event_seat_booked.'  </span>
 
-        <span class="handy showseats" ></span> <span class="show-text">Handicap Accomodation</span><br/><br/>';
+        <span class="handy showseats" ></span> <span class="show-text">'.$event_seat_handicap.'  </span><br/><br/>';
 
-    $html .= '<div class="stage-hdng"></div></div></div>';
+    $html .= '</div></div><br><br><br><div class="stage-hdng" style="width:' . $divwidth . 'px; border:1px solid;border-radius:5px;box-shadow: 5px 5px 2px #888888;" >'.$event_seat_stage.'</div>';
 
     $rst_bookings = $bookings;
 
@@ -2672,7 +3659,7 @@ function updateprice()
 
     $foundcartitems = 0;
 
-    $html .= '<div class="seatplan" id="showid_' . $showid . '" style="width:' . $divwidth . 'px;">';
+    $html .= '<div class="seatplan" id="showid_' . $showid . '" style="width:' . $divwidth . 'px  !important;">';
 
     $nextrow = '';
 
@@ -2684,52 +3671,81 @@ function updateprice()
 
         $nofsets = $data['total_seats_per_row'];
         $nofsets = floor($nofsets / 2);
+//$event_stall=strrev($event_stall);
+for ($z=0;$z<strlen($event_stall);$z++) {
+$stall[$nofsets+$z]=$event_stall[$z];
+}
 
-        $stall[$nofsets] = 'S';
-        $stall[$nofsets + 1] = 'T';
-        $stall[$nofsets + 2] = 'A';
-        $stall[$nofsets + 3] = 'L';
-        $stall[$nofsets + 4] = 'L';
+        //$stall[$nofsets] = 'S';
+        //$stall[$nofsets + 1] = 'T';
+        //$stall[$nofsets + 2] = 'A';
+        //$stall[$nofsets + 3] = 'L';
+       // $stall[$nofsets + 4] = 'L';
         ///
 
         if ($showorder != 0) {
-            $stall[$nofsets] = 'L';
-            $stall[$nofsets + 1] = 'L';
-            $stall[$nofsets + 2] = 'A';
-            $stall[$nofsets + 3] = 'T';
-            $stall[$nofsets + 4] = 'S';
+		
+$event_stall=strrev($event_stall);
+for ($z=0;$z<strlen($event_stall);$z++) {
+$stall[$nofsets+$z]=$event_stall[$z];
+}
+		
+            //$stall[$nofsets] = 'L';
+            //$stall[$nofsets + 1] = 'L';
+            //$stall[$nofsets + 2] = 'A';
+           // $stall[$nofsets + 3] = 'T';
+            //$stall[$nofsets + 4] = 'S';
         }
-
-        $balcony[$nofsets] = 'B';
-        $balcony[$nofsets + 1] = 'A';
-        $balcony[$nofsets + 2] = 'L';
-        $balcony[$nofsets + 3] = 'C';
-        $balcony[$nofsets + 4] = 'O';
-        $balcony[$nofsets + 5] = 'N';
-        $balcony[$nofsets + 6] = 'Y';
+//$event_balcony=strrev($event_balcony);
+for ($z=0;$z<strlen($event_balcony);$z++) {
+$balcony[$nofsets+$z]=$event_balcony[$z];
+}
+        //$balcony[$nofsets] = 'B';
+        //$balcony[$nofsets + 1] = 'A';
+        //$balcony[$nofsets + 2] = 'L';
+        //$balcony[$nofsets + 3] = 'C';
+       // $balcony[$nofsets + 4] = 'O';
+       // $balcony[$nofsets + 5] = 'N';
+       // $balcony[$nofsets + 6] = 'Y';
         if ($showorder != 0) {
-            $balcony[$nofsets] = 'Y';
-            $balcony[$nofsets + 1] = 'N';
-            $balcony[$nofsets + 2] = 'O';
-            $balcony[$nofsets + 3] = 'C';
-            $balcony[$nofsets + 4] = 'L';
-            $balcony[$nofsets + 5] = 'A';
-            $balcony[$nofsets + 6] = 'B';
+$event_balcony=strrev($event_balcony);
+for ($z=0;$z<strlen($event_balcony);$z++) {
+$balcony[$nofsets+$z]=$event_balcony[$z];
+}		
+            //$balcony[$nofsets] = 'Y';
+           // $balcony[$nofsets + 1] = 'N';
+           // $balcony[$nofsets + 2] = 'O';
+           // $balcony[$nofsets + 3] = 'C';
+           // $balcony[$nofsets + 4] = 'L';
+           // $balcony[$nofsets + 5] = 'A';
+           // $balcony[$nofsets + 6] = 'B';
         }
         //
-        $circle[$nofsets] = 'C';
-        $circle[$nofsets + 1] = 'I';
-        $circle[$nofsets + 2] = 'R';
-        $circle[$nofsets + 3] = 'C';
-        $circle[$nofsets + 4] = 'L';
-        $circle[$nofsets + 5] = 'E';
+
+
+//$event_circle=strrev($event_circle);
+for ($z=0;$z<strlen($event_circle);$z++) {
+$circle[$nofsets+$z]=$event_circle[$z];
+}		
+        //$circle[$nofsets] = 'C';
+        //$circle[$nofsets + 1] = 'I';
+       // $circle[$nofsets + 2] = 'R';
+       // $circle[$nofsets + 3] = 'C';
+        //$circle[$nofsets + 4] = 'L';
+        //$circle[$nofsets + 5] = 'E';
         if ($showorder != 0) {
-            $circle[$nofsets] = 'E';
-            $circle[$nofsets + 1] = 'L';
-            $circle[$nofsets + 2] = 'C';
-            $circle[$nofsets + 3] = 'R';
-            $circle[$nofsets + 4] = 'I';
-            $circle[$nofsets + 5] = 'C';
+
+
+$event_circle=strrev($event_circle);
+for ($z=0;$z<strlen($event_circle);$z++) {
+$circle[$nofsets+$z]=$event_circle[$z];
+}		
+            //$circle[$nofsets] = 'E';
+           // $circle[$nofsets + 1] = 'L';
+           // $circle[$nofsets + 2] = 'C';
+           // $circle[$nofsets + 3] = 'R';
+           // $circle[$nofsets + 4] = 'I';
+            //$circle[$nofsets + 5] = 'C';
         }
 
         $rowname = $data['row_name'];
@@ -2867,7 +3883,7 @@ function updateprice()
 
     // cartitems ----->
 
-    $html .= '<div id="gap" style="clear:both;float:left;">&nbsp;</div><a NAME="view_cart"></a><div class="cartitems" style="width:' . $divwidth . 'px; border:1px solid;border-radius:5px;box-shadow: 5px 5px 2px #888888;"><div class="cart-hdng"align="center" style="border:0px solid;border-radius:5px;"><strong>Items in Cart</strong> <span style="float:right; width: 48px;"><a href="#show_top"><strong style="vertical-align: middle; float:left; color:#000;">Up</strong><img style="margin: 3px 0 0; float:right;" src="' . RSTPLN_URL . 'images/up.png" alt="Up" title="Up" /></a></span></div><table style="color:#51020b;">';
+    $html .= '<div id="gap" style="clear:both;float:left;">&nbsp;</div><a NAME="view_cart"></a><div class="cartitems" style="width:' . $divwidth . 'px; border:1px solid;border-radius:5px;box-shadow: 5px 5px 2px #888888;"><div class="cart-hdng"align="center" style="border:0px solid;border-radius:5px;"><strong>'.$event_itemsincart.'</strong> <span style="float:right; width: 48px;"><a href="#show_top"><strong style="vertical-align: middle; float:left; color:#000;">Up</strong><img style="margin: 3px 0 0; float:right;" src="' . RSTPLN_URL . 'images/up.png" alt="Up" title="Up" /></a></span></div><table style="color:#51020b;">';
 
     if ($rst_bookings != '' && count($rst_bookings) > 0) {
 
@@ -2879,17 +3895,17 @@ function updateprice()
 
             $rst_booking['price'] = number_format($rst_booking['price'], 2, '.', '');
 
-            $html .= '<tr><td>' . $rst_booking['row_name'] . ($rst_booking['seatno']) . ' Added - </td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>Cost:' . $symbol . $rst_booking['price'] . '</td><td><img src="' . RSTPLN_URL . 'images/delete.png" class="deleteitem" id="' . $showname . '_' . $showid . '_' . $rst_booking['row_name'] . '_' . ($rst_booking['seatno']) . '" onclick="deleteitem(this);" style="cursor:pointer;border:none!important"/></td></tr>';
+            $html .= '<tr><td>' . $rst_booking['row_name'] . ($rst_booking['seatno']) . ' '.$languages_added.' - </td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>'.$event_item_cost.':' . $symbol . $rst_booking['price'] . '</td><td><img src="' . RSTPLN_URL . 'images/delete.png" class="deleteitem" id="' . $showname . '_' . $showid . '_' . $rst_booking['row_name'] . '_' . ($rst_booking['seatno']) . '" onclick="deleteitem(this);" style="cursor:pointer;border:none!important"/></td></tr>';
 
             $total = $total + $rst_booking['price'];
 
         }
 
-        $html .= '<tr><td></td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td class="total_price">Total:' . $symbol . number_format($total, 2, '.', '') . '</td></tr><tr><td><a class="contact rsbutton" href="javascript:void(0);" >Checkout</a></td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a class="rsbutton" href="javascript:void(0);"  id="' . $sessiondata . '" onclick="deleteitemall(this);">Clear Cart</a></td></tr></table></div>';
+        $html .= '<tr><td></td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td class="total_price">'.$event_item_total.':' . $symbol . number_format($total, 2, '.', '') . '</td></tr><tr><td><a class="contact rsbutton" href="javascript:void(0);" >'.$event_item_checkout.'</a></td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a class="rsbutton" href="javascript:void(0);"  id="' . $sessiondata . '" onclick="deleteitemall(this);">'.$event_item_clearcart.'</a></td></tr></table></div>';
 
     } else {
 
-        $html .= '<tr><td><img src="' . RSTPLN_URL . 'images/emptycart.png" style="border:none !important;"/></td></tr></table></div>';
+        $html .= '<tr><td><b><font size=2>'.$cart_is_empty.'</font></b><img src="' . RSTPLN_URL . 'images/emptycart.png" style="border:none !important;"/></td></tr></table></div>';
 
     }
     // <----- cartitems
@@ -2915,6 +3931,12 @@ function rst_settings()
 {
     require_once('inc/inc.rst-settings.php');
 }
+
+function rst_pay_settings()
+{
+    require_once('inc/inc.rst-pay-settings.php');
+}
+
 
 
 /*
@@ -2962,6 +3984,13 @@ function rst_reports()
     require_once('inc/inc.reports.php');
 }
 
+function rst_transactions()
+{
+
+    require_once('inc/inc.transactions.php');
+}
+
+
 
 /*
  * Returns list of booked tickets for the appropriate show and date range
@@ -3004,13 +4033,104 @@ function bookedtickets($byshowid, $datefrom, $dateto)
     }
 
     $sql .= " and rsts.id = bsr.show_id order by rstbk.booking_time desc";
-
+//print $sql;
+//exit;
     if ($results = $wpdb->get_results($sql, ARRAY_A)) {
 
         $bookedtickets = $wpdb->get_results($sql, ARRAY_A);
 
     }
 
+    return $bookedtickets;
+
+}
+
+function bookedticketsnew($byshowid, $datefrom, $dateto,$bybookingid)
+{
+
+    global $wpdb;
+
+    $currentdate = date('Y-m-d');
+
+    $bookedtickets = array();
+
+    $sql = "select * from $wpdb->rst_bookings rstbk,$wpdb->rst_booking_seats_relation bsr,$wpdb->rst_shows rsts
+
+        where (rstbk.payment_status ='ipn_verified' OR rstbk.payment_status ='offline_registration')
+
+        and bsr.booking_id = rstbk.booking_id ";
+
+    if ($byshowid != 0) {
+
+        $sql .= " AND rstbk.show_id=" . $byshowid;
+
+    }
+    if ($bybookingid) {
+
+        $sql .= " AND rstbk.booking_id=" . $bybookingid;
+
+    }	
+	
+
+    if ($datefrom != '' && $dateto != '') {
+
+       // $sql .= " and rstbk.booking_time between '$datefrom 00:00:00' AND '$dateto 23:59:59'";
+
+    } else if ($datefrom != '') {
+
+        $sql .= " and rstbk.booking_time >='$datefrom'";
+
+    }
+
+    if (($byshowid == '' || $byshowid == '0') && $datefrom == '' && $dateto == '') {
+
+       // $sql .= " and rstbk.booking_time between '$currentdate 00:00:00' AND '$currentdate 23:59:59'";
+
+    }
+
+    $sql .= " and rsts.id = bsr.show_id order by rstbk.booking_time desc";
+//print $sql;
+//exit;
+    if ($results = $wpdb->get_results($sql, ARRAY_A)) {
+
+        $bookedtickets = $wpdb->get_results($sql, ARRAY_A);
+
+    }
+
+    return $bookedtickets;
+
+}
+
+
+function bookedticketssearch($keywords)
+{
+
+    global $wpdb;
+
+    $currentdate = date('Y-m-d');
+
+    $bookedtickets = array();
+
+    $sql = "select * from $wpdb->rst_bookings rstbk,$wpdb->rst_booking_seats_relation bsr,$wpdb->rst_shows rsts
+
+        where (rstbk.payment_status ='ipn_verified' OR rstbk.payment_status ='offline_registration')
+
+        and bsr.booking_id = rstbk.booking_id ";
+    if($keywords)
+	{
+	$sql .= " and (show_name like '%".$keywords."%'  or name like '%".$keywords."%'  or email like '%".$keywords."%'   or phone like '%".$keywords."%'   or ticket_seat_no like '%".$keywords."%'   
+	          or txn_id like '%".$keywords."%' or c_code like '%".$keywords."%' or status like '%".$keywords."%') ";
+	}
+
+    $sql .= " and rsts.id = bsr.show_id order by rstbk.booking_time desc";
+	//print $sql;
+
+    if ($results = $wpdb->get_results($sql, ARRAY_A)) {
+
+        $bookedtickets = $wpdb->get_results($sql, ARRAY_A);
+
+    }
+  //print_r($bookedtickets);
     return $bookedtickets;
 
 }
@@ -3025,6 +4145,7 @@ function gettheadminseatchat($showid)
 global $screenspacing;
     $rst_paypal_options = get_option(RSTPLN_PPOPTIONS);
     $symbol = $rst_paypal_options['currencysymbol'];
+	$symbol = get_option('rst_currencysymbol');
     $symbols = array(
         "0" => "$",
         "1" => "&pound;",
@@ -3064,10 +4185,17 @@ global $screenspacing;
     }
 
     $divwidth = (($seats[0]['total_seats_per_row']) + 2) * 24;
-     //$divwidth=$divwidth * $rst_options['rst_zoom'];
+    $divwidth=$divwidth * $rst_options['rst_zoom'];
     $showname = $data[0]['show_name'];
-
-    $html = '';
+    $html='<style>
+ul.r li {
+    font-size:'. (int)(10 * $rst_options['rst_zoom']).'px !important;
+    height:'. (int)(24 * $rst_options['rst_zoom']).'px !important;
+    line-height:'.(int)(24 * $rst_options['rst_zoom']).'>px !important;
+    width:'.(int)(21 * $rst_options['rst_zoom']).'px !important;
+}
+</style>'; 
+   // $html = '';
 
     $html .= "<h2>" . __('Preview of the Show:' . $showname, 'rst') . "</h2>";
 
@@ -3419,7 +4547,7 @@ function rst_ipncall($data)
     global $wpdb;
 
     $bookingdetails = $data['custom'];
-
+    //print "<br>Booking details=".$bookingdetails;
     $bookingdetails = explode("__", $bookingdetails);
 
     $booking_id = isset($bookingdetails[0]) ? $bookingdetails[0] : $data['custom'];
@@ -3479,6 +4607,7 @@ function rst_ipncall($data)
         $booking_details = $booking_details[0]['booking_details'];
 
         $booking_details = unserialize($booking_details);
+		//print_r($booking_details);
 
         for ($row = 0; $row < count($booking_details); $row++) {
 
@@ -3535,7 +4664,7 @@ function rst_ipncall($data)
             $sql = "INSERT INTO $wpdb->rst_booking_seats_relation (ticket_no,ticket_seat_no,booking_id,show_id,b_seatid,total_paid,txn_id,seat_cost)
 
             VALUES ('$ticketno', '$ticket_seat_no', $booking_id,$showid,$seatid,$totalpaid,'$txn_id',$price)";
-
+            //print "<br>".$sql;
             $wpdb->query($sql);
 
         }
@@ -3562,9 +4691,182 @@ function rst_ipncall($data)
 
     }
 
-    exit();
+    //exit();
 
 }
+
+function complete_offline_registration($data)
+{
+
+
+
+
+}
+
+function rst_bookseatsfinal($data)
+{
+    global $wpdb;
+    $sendemail = $data['sendemail'];  
+    $bookingdetails = $data['custom'];
+    //print "<br>Booking details=".$bookingdetails;
+    $bookingdetails = explode("__", $bookingdetails);
+
+    $booking_id = isset($bookingdetails[0]) ? $bookingdetails[0] : $data['custom'];
+
+    $c_code = isset($bookingdetails[1]) ? $bookingdetails[1] : '';
+
+    $c_discount = isset($bookingdetails[2]) ? $bookingdetails[2] : 0;
+    $freeseatsavailed = isset($bookingdetails[3]) ? $bookingdetails[3] : 0;
+    $rstfees = isset($bookingdetails[4]) ? $bookingdetails[4] : 0;
+    if ($freeseatsavailed != 0) {
+        $data1['seatsavailed'] = $freeseatsavailed;
+        $data1['memid'] = $c_code;
+        rst_member_operations('updateavail', $data1);
+    }
+
+    $rst_options = get_option(RSTPLN_OPTIONS);
+
+    $rst_options['rst_ticket_prefix'];
+
+    $ticketno = $rst_options['rst_ticket_prefix'] . $booking_id;
+
+    $paypalvars = array();
+
+    $txn_id = '';
+
+    $totalpaid = 0;
+
+    foreach ($data as $key => $value) {
+
+        if ($key == 'txn_id') {
+
+            $txn_id = $value;
+
+        }
+
+        if ($key == 'mc_gross') {
+
+            $totalpaid = $value;
+
+        }
+
+    }
+    $txn_id1 = $txn_id;
+    $totalpaid1 = $totalpaid;
+    $paypal_vars = print_r($data, true);
+
+    $wpdb->query("UPDATE  $wpdb->rst_bookings SET paypal_vars='$paypal_vars',payment_status='ipn_verified',ticket_no='$ticketno',c_code='$c_code',c_discount=$c_discount,fees=$rstfees WHERE booking_id=" . $booking_id);
+
+    $sql = "SELECT * FROM $wpdb->rst_bookings where booking_id=" . $booking_id;
+
+    if ($results = $wpdb->get_results($sql, ARRAY_A)) {
+
+        $booking_details = $wpdb->get_results($sql, ARRAY_A);
+
+        $data = $booking_details[0];
+
+        $booking_details = $booking_details[0]['booking_details'];
+
+        $booking_details = unserialize($booking_details);
+		//print_r($booking_details);
+        $mytickets=array();
+		$seatcosts=array();
+        for ($row = 0; $row < count($booking_details); $row++) {
+
+            $seats = $booking_details[$row]['seatno'];
+
+            $showid = $booking_details[$row]['show_id'];
+
+            $rowname = $booking_details[$row]['row_name'];
+
+            $price = $booking_details[$row]['price'];
+
+            $sql = "SELECT * FROM $wpdb->rst_seats st,$wpdb->rst_shows sh
+
+                    WHERE
+
+                    sh.id=st.show_id AND
+
+                    st.row_name = '$rowname' AND
+
+                    st.seatno = $seats AND
+
+                    st.seattype <>'' AND
+
+                    sh.id =" . $showid;
+
+            $seatdatatoupdate = $wpdb->get_results($sql, ARRAY_A);
+
+            $seatdata = $seatdatatoupdate[0];
+
+            $seatid = $seatdata['seatid'];
+
+            if ($seatdata['seattype'] == 'T') {
+
+                $wpdb->query("UPDATE  $wpdb->rst_seats SET seattype='B',status='paid' WHERE show_id=" . $showid . " AND row_name='$rowname' AND seatid=" . $seatid);
+
+            }
+
+            if ($row < $freeseatsavailed) {
+                $txn_id = 'Free Booking';
+                $totalpaid = 0;
+            } else {
+                $txn_id = $txn_id1;
+                $totalpaid = $totalpaid1;
+            }
+            if ($txn_id == 'Free Booking') {
+                $totalpaid = 0;
+                $txn_id = base64_encode('Free Booking-' . $ticketno . $showid);
+            }
+            if ($txn_id == 'Offline Reservation') {
+                $txn_id = base64_encode('Offline Reservation-' . $ticketno . $showid);
+            }
+			$txn_id = $txn_id1;
+            $ticket_seat_no = $ticketno . '-' . $rowname . $seats;
+            $mytickets[]=$ticket_seat_no;
+			$seatcosts[]=$ticket_seat_no.":".$price;
+            $sql = "INSERT INTO $wpdb->rst_booking_seats_relation (ticket_no,ticket_seat_no,booking_id,show_id,b_seatid,total_paid,txn_id,seat_cost)
+
+            VALUES ('$ticketno', '$ticket_seat_no', $booking_id,$showid,$seatid,$totalpaid,'$txn_id',$price)";
+            //print "<br>".$sql;
+            $wpdb->query($sql);
+
+        }
+         $myticketsstring=implode(",",$mytickets) ;
+		 $seatcoststring=implode(",",$seatcosts) ;
+		 
+        $sql = "select * from $wpdb->rst_bookings rstbk,$wpdb->rst_booking_seats_relation bsr,$wpdb->rst_shows rsts
+
+        where (rstbk.payment_status ='ipn_verified' OR rstbk.payment_status ='offline_registration')
+
+        and bsr.booking_id = rstbk.booking_id
+
+        and rsts.id = bsr.show_id
+
+        and bsr.booking_id =" . $booking_id;
+
+        if ($results = $wpdb->get_results($sql, ARRAY_A)) {
+
+            $booking_details = $wpdb->get_results($sql, ARRAY_A);
+			
+			$show_name=$booking_details[0]['show_name'];
+			$show_date=$booking_details[0]['show_date'];
+			$wpdb->query("UPDATE  rst_payment_transactions SET show_name='$show_name',show_date='$show_date',ticket_no='$ticketno',coupon_code='$c_code',coupon_discount='$c_discount',special_fee='$rstfees',seat_numbers='$myticketsstring', seat_cost='$seatcoststring' WHERE tx_str=" . $booking_id);
+
+            $data = $booking_details;
+			if($sendemail!="no")
+			{
+            sendrstmail($data, $txn_id);
+			}
+
+        }
+
+    }
+
+    //exit();
+
+}
+
 
 
 /*
@@ -3572,13 +4874,15 @@ function rst_ipncall($data)
  */
 function sendrstmail($data, $txn_id)
 {
+//print_r($data);
     $rst_options = get_option(RSTPLN_OPTIONS);
     $stopadminemails = $rst_options['rst_disable_admin_email'];
     $rst_options = get_option(RSTPLN_OPTIONS);
     $rst_paypal_options = get_option(RSTPLN_PPOPTIONS);
 
     $symbol = $rst_paypal_options['currencysymbol'];
-
+	
+$symbol = get_option('rst_currencysymbol');
     $symbols = array(
         "0" => "$",
         "1" => "&pound;",
@@ -3588,6 +4892,12 @@ function sendrstmail($data, $txn_id)
         "5" => "&yen;");
     $symbol = $symbols[$symbol];
     $useremailtemp = $rst_options['rst_etemp'];
+	
+//$wplanguagesoptions = get_option(RSTLANGUAGES_OPTIONS);
+//if($wplanguagesoptions['rst_enable_languages']=="on" && $wplanguagesoptions['languages_event_user_email_template'])
+//{
+//$useremailtemp=$wplanguagesoptions['languages_event_user_email_template'];
+//}	
 
     $adminemailtemp = $rst_options['rst_adminetemp'];
 
@@ -3644,7 +4954,25 @@ function sendrstmail($data, $txn_id)
     // the address to show in From field.
 
     $recipientAddr = $useremail;
+	
+						foreach($data as $key=>$value)
+				{
+				$mailstring.="<br>".$key."=".$value;
+				}	
+				$mailstring.="<br>GET varaibles<br>";
+				foreach($_GET as $key=>$value)
+				{
+				$mailstring.="<br>".$key."=".$value;
+				}	
+				$mailstring.="<br>To email address=".$recipientAddr;
+	
+	
+    $headers  = "From: $from\r\n";
+    $headers .= "Content-type: text/html\r\n";
 
+    //mail($to, $subject, $mailstring, $headers);			
+
+//print $mailstring."<br><br><br>";
     if ($txn_id == 'Offline Reservation' && $offlineesub != '')
         $subjectStr = $offlineesub;
     else if ($esub != '')
@@ -3663,10 +4991,9 @@ function sendrstmail($data, $txn_id)
     $fileType = 'pdf/pdf';
     $headers = "From: $recipientAddradmin\r\n";
     $headers .= "Content-type: text/html\r\n";
-
-    if (
-        mail($recipientAddr, $subjectStr, $mailBodyText, $headers)
-    ) {
+		//print " To address".$recipientAddr."<br>".$subjectStr."<br>".$mailBodyText;
+	//exit;
+    if (mail($recipientAddr, $subjectStr, $mailBodyText, $headers)) {
 
         //echo "<p>Mail has been sent with attachment ($fileName) !</p>";
 
@@ -3685,7 +5012,7 @@ function sendrstmail($data, $txn_id)
         // echo '<p>Mail sending failed with attachment ($fileName) !</p>';
 
     }
-
+//exit;
 }
 
 
@@ -3722,6 +5049,778 @@ function delete_seats($action, $finalseats, $showid)
     global $wpdb;
     return $wpdb->query("DELETE FROM $wpdb->rst_seats WHERE show_id='$showid'");
 }
+
+
+function offline_payment_form($_data = array()) {
+
+
+	if (isset($_data['payment_method']) && $_data['payment_method'] == "offlinepayment_force") {
+		$qty = sizeof($_data['owners'])*$_data['qty'];
+		foreach($_data as $key=>$value)
+	{
+	//if(in_array($key,$hidden_fields))
+	//$hiddenfields.='<input type="hidden" name="'.$key.'" value="'.$value.'"/>';
+	
+	}	
+
+
+	$rst_options = get_option(RSTPLN_OPTIONS);
+
+	$rst_paypal_options = get_option(RSTPLN_PPOPTIONS);
+	
+	$wplanguagesoptions = get_option(RSTLANGUAGES_OPTIONS);
+	$offline_payment_mode="Offline payment mode";
+	$offline_cc="Credit Card";
+    $offline_cheque="Cheque";
+    $offline_fill="Fill your name /email to receive a copy of ticket. This will serve as purchase receipt";
+    $offline_place_name="Place your name (required)";
+	$offline_place_email="Your email address (required)";
+	$offline_billing_address="Billing Address";
+	$offline_first_name="First name";
+	$offline_last_name="Last name";
+	$offline_street="Street";
+	$offline_city="City";
+	$offline_state="State";
+	$offline_country="Country";
+	$offline_zip="Zip";
+	$offline_phone="Phone";
+
+	
+
+    
+	if($wplanguagesoptions['rst_enable_languages']=="on")
+	{
+		if($wplanguagesoptions['languages_offline_payment_mode'])
+		{
+			$offline_payment_mode=$wplanguagesoptions['languages_offline_payment_mode'];
+		}
+		if($wplanguagesoptions['languages_offline_cc'])
+		{
+			$offline_cc=$wplanguagesoptions['languages_offline_cc'];
+		}
+		if($wplanguagesoptions['languages_offline_cheque'])
+		{
+			$offline_cheque=$wplanguagesoptions['languages_offline_cheque'];
+		}
+		if($wplanguagesoptions['languages_offline_fill'])
+		{
+			$offline_fill=$wplanguagesoptions['languages_offline_fill'];
+		}
+        if($wplanguagesoptions['languages_offline_place_name'])
+		{
+			$offline_place_name=$wplanguagesoptions['languages_offline_place_name'];
+		}			
+        if($wplanguagesoptions['languages_offline_place_email'])
+		{
+			$offline_place_email=$wplanguagesoptions['languages_offline_place_email'];
+		}			
+        if($wplanguagesoptions['languages_offline_billing_address'])
+		{
+			$offline_billing_address=$wplanguagesoptions['languages_offline_billing_address'];
+		}		
+        if($wplanguagesoptions['languages_offline_first_name'])
+		{
+			$offline_first_name=$wplanguagesoptions['languages_offline_first_name'];
+		}	
+        if($wplanguagesoptions['languages_offline_last_name'])
+		{
+			$offline_last_name=$wplanguagesoptions['languages_offline_last_name'];
+		}			
+        if($wplanguagesoptions['languages_offline_street'])
+		{
+			$offline_street=$wplanguagesoptions['languages_offline_street'];
+		}
+		if($wplanguagesoptions['languages_offline_city'])
+		{
+			$offline_city=$wplanguagesoptions['languages_offline_city'];
+		}
+		if($wplanguagesoptions['languages_offline_state'])
+		{
+			$offline_state=$wplanguagesoptions['languages_offline_state'];
+		}
+		if($wplanguagesoptions['languages_offline_country'])
+		{
+			$offline_country=$wplanguagesoptions['languages_offline_country'];
+		}
+		if($wplanguagesoptions['languages_offline_zip'])
+		{
+			$offline_zip=$wplanguagesoptions['languages_offline_zip'];
+		}
+		if($wplanguagesoptions['languages_offline_phone'])
+		{
+			$offline_phone=$wplanguagesoptions['languages_offline_phone'];
+		}
+
+		
+ 		
+	}	
+	
+	
+
+		$returnstring= '<div id="offlinepaymentform"><form action="" method="POST" id="row_seats_default_offlinepayment_payment_form">					
+		<input type="hidden" name="campaign_title" value="'.$_data['campaign_title'].'"/>
+		<input type="hidden" name="action" value="row_seats_default_offlinepayment"/>
+		<input type="hidden" name="redirect" value="'.$_data['return_url'].'"/>
+		<input type="hidden"  id="txn_key" name="txn_key" value="">
+		<input type="hidden" id="x_custom" name="x_custom" value="">
+		<input type="hidden" id="x_invoice_num" name="x_invoice_num" value="">	
+		<input type="hidden" id="item_number" name="item_number" value="">	
+		<input type="hidden" name="amount" value="'.$_data['amount'].'"/>
+		<input type="hidden" name="offlinepayment_code" value="'.base64_encode($_data['tx_str']).'">'.$hiddenfields.'
+		<div id="payment-errors" class="row_seats_error_message" style="display:none">Attention! Please correct the errors below and try again.<div id="offlinepayment_errors"></div></div><br>
+		<table class=row_seats_confirmation_table>
+				<!--<tr>
+					<td class="row_seats_confirmation_title" width="278" >'.$offline_payment_mode.':</td>
+					<td class="row_seats_confirmation_data"><input type="radio"  name="transaction_mode"  id="transaction_mode" Value="Credit Card" class="row_seats_input" checked/>&nbsp;'.$offline_cc.'&nbsp;&nbsp;<input type="radio"  name="transaction_mode"  id="transaction_mode" Value="Cheque" class="row_seats_input"/>&nbsp;'.$offline_cheque.' </td>
+				</tr>
+				<tr>
+					<td class="row_seats_confirmation_title" colspan=2><span style="color:#888888;font-style:italic;font-weight:normal">'.$offline_fill.'</span><br>
+					<div class="row_seats_confirmation_data"><input class="row_seats_input" title="'.$offline_place_name.'" onblur="if (this.value == \'\') {this.value = \''.$offline_place_name.'\';}" onfocus="if (this.value == \''.$offline_place_name.'\') {this.value = \'\';}" value="'.$offline_place_name.'" style="width:230px;padding-left:20px;" type="text" name="offlinepayment_payer_name" id="offlinepayment_payer_name" />&nbsp;&nbsp;&nbsp;
+					
+					<input class="row_seats_input" title="'.$offline_place_email.'" onblur="if (this.value == \'\') {this.value = \''.$offline_place_email.'\';}" onfocus="if (this.value == \''.$offline_place_email.'\') {this.value = \'\';}" value="'.$offline_place_email.'" style="width:230px;padding-left:20px;" type="text" id="offlinepayment_payer_email" name="offlinepayment_payer_email" /></div>
+					</td>
+				</tr>-->';
+/*
+				$returnstring.= '<input type="hidden"  name="address_verification" id="address_verification"  value="enabled"/><tr>
+					<td class="row_seats_confirmation_title" colspan="2"><b>'.$offline_billing_address.'</b></td>
+				</tr>
+				<tr>
+					<td class="row_seats_confirmation_title" width="278">'.$offline_first_name.':</td>
+					<td class="row_seats_confirmation_data"><input type="text" size="20" autocomplete="off" name="first_name"   id="first_name" class="row_seats_input"/></td>
+				</tr>	
+											<tr>
+					<td class="row_seats_confirmation_title" width="278">'.$offline_last_name.':</td>
+					<td class="row_seats_confirmation_data"><input type="text" size="20" autocomplete="off" name="last_name"   id="last_name" class="row_seats_input"/></td>
+				</tr>	
+				<tr>
+					<td class="row_seats_confirmation_title" width="278">'.$offline_street.':</td>
+					<td class="gc_confirmation_data"><input type="text" size="20" autocomplete="off" name="street"   id="street" class="row_seats_input"/></td>
+				</tr>							
+				<tr>
+					<td class="row_seats_confirmation_title" width="278">'.$offline_city.':</td>
+					<td class="gc_confirmation_data"><input type="text" size="20" autocomplete="off" name="city"   id="city" class="row_seats_input"/></td>
+				</tr>						  		<tr>
+					<td class="row_seats_confirmation_title" width="278">'.$offline_state.':</td>
+					<td class="row_seats_confirmation_data"><input type="text" size="20" autocomplete="off" name="state"   id="state" class="row_seats_input"/></td>
+				</tr>						  		<tr>
+					<td class="row_seats_confirmation_title" width="278">'.$offline_country.':</td>
+					<td class="row_seats_confirmation_data">
+					<select id="country" name="country" class="row_seats_input">
+					<option value="US">United States</option>
+					<option value="AF">Afghanistan</option>
+					<option value="AX">Aland Islands</option>
+					<option value="AL">Albania</option>
+					<option value="DZ">Algeria</option>
+					<option value="AS">American Samoa</option>
+					<option value="AD">Andorra</option>
+					<option value="AO">Angola</option>
+					<option value="AI">Anguilla</option>
+					<option value="AQ">Antarctica</option>
+					<option value="AG">Antigua and Barbuda</option>
+					<option value="AR">Argentina</option>
+					<option value="AM">Armenia</option>
+					<option value="AW">Aruba</option>
+					<option value="AU">Australia</option>
+					<option value="AT">Austria</option>
+					<option value="AZ">Azerbaijan</option>
+					<option value="BS">Bahamas</option>
+					<option value="BH">Bahrain</option>
+					<option value="BD">Bangladesh</option>
+					<option value="BB">Barbados</option>
+					<option value="BY">Belarus</option>
+					<option value="BE">Belgium</option>
+					<option value="BZ">Belize</option>
+					<option value="BJ">Benin</option>
+					<option value="BM">Bermuda</option>
+					<option value="BT">Bhutan</option>
+					<option value="BO">Bolivia</option>
+					<option value="BA">Bosnia and Herzegovina</option>
+					<option value="BW">Botswana</option>
+					<option value="BV">Bouvet Island</option>
+					<option value="BR">Brazil</option>
+					<option value="IO">British Indian Ocean Territory</option>
+					<option value="BN">Brunei Darussalam</option>
+					<option value="BG">Bulgaria</option>
+					<option value="BF">Burkina Faso</option>
+					<option value="BI">Burundi</option>
+					<option value="KH">Cambodia</option>
+					<option value="CM">Cameroon</option>
+					<option value="CA">Canada</option>
+					<option value="CV">Cape Verde</option>
+					<option value="KY">Cayman Islands</option>
+					<option value="CF">Central African Republic</option>
+					<option value="TD">Chad</option>
+					<option value="CL">Chile</option>
+					<option value="CN">China</option>
+					<option value="CX">Christmas Island</option>
+					<option value="CC">Cocos (Keeling) Islands</option>
+					<option value="CO">Colombia</option>
+					<option value="KM">Comoros</option>
+					<option value="CG">Congo</option>
+					<option value="CD">Congo, The Democratic Republic of The</option>
+					<option value="CK">Cook Islands</option>
+					<option value="CR">Costa Rica</option>
+					<option value="CI">Cote D\'ivoire</option>
+					<option value="HR">Croatia</option>
+					<option value="CU">Cuba</option>
+					<option value="CY">Cyprus</option>
+					<option value="CZ">Czech Republic</option>
+					<option value="DK">Denmark</option>
+					<option value="DJ">Djibouti</option>
+					<option value="DM">Dominica</option>
+					<option value="DO">Dominican Republic</option>
+					<option value="EC">Ecuador</option>
+					<option value="EG">Egypt</option>
+					<option value="SV">El Salvador</option>
+					<option value="GQ">Equatorial Guinea</option>
+					<option value="ER">Eritrea</option>
+					<option value="EE">Estonia</option>
+					<option value="ET">Ethiopia</option>
+					<option value="FK">Falkland Islands (Malvinas)</option>
+					<option value="FO">Faroe Islands</option>
+					<option value="FJ">Fiji</option>
+					<option value="FI">Finland</option>
+					<option value="FR">France</option>
+					<option value="GF">French Guiana</option>
+					<option value="PF">French Polynesia</option>
+					<option value="TF">French Southern Territories</option>
+					<option value="GA">Gabon</option>
+					<option value="GM">Gambia</option>
+					<option value="GE">Georgia</option>
+					<option value="DE">Germany</option>
+					<option value="GH">Ghana</option>
+					<option value="GI">Gibraltar</option>
+					<option value="GR">Greece</option>
+					<option value="GL">Greenland</option>
+					<option value="GD">Grenada</option>
+					<option value="GP">Guadeloupe</option>
+					<option value="GU">Guam</option>
+					<option value="GT">Guatemala</option>
+					<option value="GG">Guernsey</option>
+					<option value="GN">Guinea</option>
+					<option value="GW">Guinea-bissau</option>
+					<option value="GY">Guyana</option>
+					<option value="HT">Haiti</option>
+					<option value="HM">Heard Island and Mcdonald Islands</option>
+					<option value="VA">Holy See (Vatican City State)</option>
+					<option value="HN">Honduras</option>
+					<option value="HK">Hong Kong</option>
+					<option value="HU">Hungary</option>
+					<option value="IS">Iceland</option>
+					<option value="IN">India</option>
+					<option value="ID">Indonesia</option>
+					<option value="IR">Iran, Islamic Republic of</option>
+					<option value="IQ">Iraq</option>
+					<option value="IE">Ireland</option>
+					<option value="IM">Isle of Man</option>
+					<option value="IL">Israel</option>
+					<option value="IT">Italy</option>
+					<option value="JM">Jamaica</option>
+					<option value="JP">Japan</option>
+					<option value="JE">Jersey</option>
+					<option value="JO">Jordan</option>
+					<option value="KZ">Kazakhstan</option>
+					<option value="KE">Kenya</option>
+					<option value="KI">Kiribati</option>
+					<option value="KP">Korea, Democratic People\'s Republic of</option>
+					<option value="KR">Korea, Republic of</option>
+					<option value="KW">Kuwait</option>
+					<option value="KG">Kyrgyzstan</option>
+					<option value="LA">Lao People\'s Democratic Republic</option>
+					<option value="LV">Latvia</option>
+					<option value="LB">Lebanon</option>
+					<option value="LS">Lesotho</option>
+					<option value="LR">Liberia</option>
+					<option value="LY">Libyan Arab Jamahiriya</option>
+					<option value="LI">Liechtenstein</option>
+					<option value="LT">Lithuania</option>
+					<option value="LU">Luxembourg</option>
+					<option value="MO">Macao</option>
+					<option value="MK">Macedonia, The Former Yugoslav Republic of</option>
+					<option value="MG">Madagascar</option>
+					<option value="MW">Malawi</option>
+					<option value="MY">Malaysia</option>
+					<option value="MV">Maldives</option>
+					<option value="ML">Mali</option>
+					<option value="MT">Malta</option>
+					<option value="MH">Marshall Islands</option>
+					<option value="MQ">Martinique</option>
+					<option value="MR">Mauritania</option>
+					<option value="MU">Mauritius</option>
+					<option value="YT">Mayotte</option>
+					<option value="MX">Mexico</option>
+					<option value="FM">Micronesia, Federated States of</option>
+					<option value="MD">Moldova, Republic of</option>
+					<option value="MC">Monaco</option>
+					<option value="MN">Mongolia</option>
+					<option value="ME">Montenegro</option>
+					<option value="MS">Montserrat</option>
+					<option value="MA">Morocco</option>
+					<option value="MZ">Mozambique</option>
+					<option value="MM">Myanmar</option>
+					<option value="NA">Namibia</option>
+					<option value="NR">Nauru</option>
+					<option value="NP">Nepal</option>
+					<option value="NL">Netherlands</option>
+					<option value="AN">Netherlands Antilles</option>
+					<option value="NC">New Caledonia</option>
+					<option value="NZ">New Zealand</option>
+					<option value="NI">Nicaragua</option>
+					<option value="NE">Niger</option>
+					<option value="NG">Nigeria</option>
+					<option value="NU">Niue</option>
+					<option value="NF">Norfolk Island</option>
+					<option value="MP">Northern Mariana Islands</option>
+					<option value="NO">Norway</option>
+					<option value="OM">Oman</option>
+					<option value="PK">Pakistan</option>
+					<option value="PW">Palau</option>
+					<option value="PS">Palestinian Territory, Occupied</option>
+					<option value="PA">Panama</option>
+					<option value="PG">Papua New Guinea</option>
+					<option value="PY">Paraguay</option>
+					<option value="PE">Peru</option>
+					<option value="PH">Philippines</option>
+					<option value="PN">Pitcairn</option>
+					<option value="PL">Poland</option>
+					<option value="PT">Portugal</option>
+					<option value="PR">Puerto Rico</option>
+					<option value="QA">Qatar</option>
+					<option value="RE">Reunion</option>
+					<option value="RO">Romania</option>
+					<option value="RU">Russian Federation</option>
+					<option value="RW">Rwanda</option>
+					<option value="SH">Saint Helena</option>
+					<option value="KN">Saint Kitts and Nevis</option>
+					<option value="LC">Saint Lucia</option>
+					<option value="PM">Saint Pierre and Miquelon</option>
+					<option value="VC">Saint Vincent and The Grenadines</option>
+					<option value="WS">Samoa</option>
+					<option value="SM">San Marino</option>
+					<option value="ST">Sao Tome and Principe</option>
+					<option value="SA">Saudi Arabia</option>
+					<option value="SN">Senegal</option>
+					<option value="RS">Serbia</option>
+					<option value="SC">Seychelles</option>
+					<option value="SL">Sierra Leone</option>
+					<option value="SG">Singapore</option>
+					<option value="SK">Slovakia</option>
+					<option value="SI">Slovenia</option>
+					<option value="SB">Solomon Islands</option>
+					<option value="SO">Somalia</option>
+					<option value="ZA">South Africa</option>
+					<option value="GS">South Georgia and The South Sandwich Islands</option>
+					<option value="ES">Spain</option>
+					<option value="LK">Sri Lanka</option>
+					<option value="SD">Sudan</option>
+					<option value="SR">Suriname</option>
+					<option value="SJ">Svalbard and Jan Mayen</option>
+					<option value="SZ">Swaziland</option>
+					<option value="SE">Sweden</option>
+					<option value="CH">Switzerland</option>
+					<option value="SY">Syrian Arab Republic</option>
+					<option value="TW">Taiwan, Province of China</option>
+					<option value="TJ">Tajikistan</option>
+					<option value="TZ">Tanzania, United Republic of</option>
+					<option value="TH">Thailand</option>
+					<option value="TL">Timor-leste</option>
+					<option value="TG">Togo</option>
+					<option value="TK">Tokelau</option>
+					<option value="TO">Tonga</option>
+					<option value="TT">Trinidad and Tobago</option>
+					<option value="TN">Tunisia</option>
+					<option value="TR">Turkey</option>
+					<option value="TM">Turkmenistan</option>
+					<option value="TC">Turks and Caicos Islands</option>
+					<option value="TV">Tuvalu</option>
+					<option value="UG">Uganda</option>
+					<option value="UA">Ukraine</option>
+					<option value="AE">United Arab Emirates</option>
+					<option value="GB">United Kingdom</option>
+					<option value="UM">United States Minor Outlying Islands</option>
+					<option value="UY">Uruguay</option>
+					<option value="UZ">Uzbekistan</option>
+					<option value="VU">Vanuatu</option>
+					<option value="VE">Venezuela</option>
+					<option value="VN">Viet Nam</option>
+					<option value="VG">Virgin Islands, British</option>
+					<option value="VI">Virgin Islands, U.S.</option>
+					<option value="WF">Wallis and Futuna</option>
+					<option value="EH">Western Sahara</option>
+					<option value="YE">Yemen</option>
+					<option value="ZM">Zambia</option>
+					<option value="ZW">Zimbabwe</option>
+					</select>	
+					</td>
+				</tr>						  		<tr>
+					<td class="row_seats_confirmation_title" width="278">'.$offline_zip.':</td>
+					<td class="row_seats_confirmation_data"><input type="text" size="15" autocomplete="off" name="zip"   id="zip" class="row_seats_input"/></td>
+				</tr>
+				<tr>
+					<td class="row_seats_confirmation_title" width="278">'.$offline_phone.':</td>
+					<td class="row_seats_confirmation_data"><input type="text" size="15" autocomplete="off" name="phone"   id="phone" class="row_seats_input"/></td>
+				</tr>';
+*/
+				$returnstring.= '</table>
+		 <button id="rsbuynow" style="display:none" type="submit" class="submit-button">Submit Payment</button>
+	  </form>				  
+	  ';
+	  echo $returnstring;
+
+	}
+}
+
+
+function offline_payment_form_process() {
+
+	global $row_seats, $wpdb;
+
+	if(isset($_POST['action']) && $_POST['action'] == 'row_seats_default_offlinepayment') {	
+		$gross_total = $_REQUEST['amount'];
+		$first_name= $_REQUEST['first_name'];	
+		$last_name= $_REQUEST['last_name'];
+		$card_number = $_REQUEST['card-number'];					
+		$card_cvc = $_REQUEST['card-cvc'];
+		$card_expiry = $_REQUEST['card-expiry-month'].$_REQUEST['card-expiry-year'];				
+		$street = $_REQUEST['street'];
+		$city = $_REQUEST['city'];
+		$state = $_REQUEST['state'];
+		$country = $_REQUEST['country'];
+		$zip = $_REQUEST['zip'];
+		$phone = $_REQUEST['phone'];
+		$transaction_mode_offline = $_REQUEST['transaction_mode'];
+		$api_version = '85.0';		
+		$request_params = array
+		(
+			'PAYMENTACTION' => 'Sale',
+			'TRANSACTIONMODE' => $transaction_mode_offline,
+			'IPADDRESS' => $_SERVER['REMOTE_ADDR'],
+			'FIRSTNAME' => $first_name,
+			'LASTNAME' => $last_name,
+			'STREET' => $street,
+			'CITY' => $city,
+			'STATE' => $state,             
+			'COUNTRYCODE' => $country,
+			'ZIP' => $zip,
+			'PHONE' => $phone,
+			'AMT' => $gross_total,
+			'CURRENCYCODE' => 'USD',
+			'DESC' => $campaign_title
+		);
+
+		$temp_array['address'] = array
+		(
+			'first_name' => $first_name,
+			'last_name' => $last_name,
+			'address' => $street,
+			'city' => $city,
+			'state' => $state,             
+			'country' => $country,
+			'zip' => $zip,
+			'phone' => $phone
+		);	
+
+		$paymentData="";
+		foreach($request_params as $var=>$val)
+		{
+		   $paymentData.= '&'.$var.'='.urlencode($val);  
+		}					
+
+		$payer_name	=$first_name." ".$last_name;		   
+		$payer_name	=$_POST['offlinepayment_payer_name'];
+		$payer_offlinepayment	=$_POST['offlinepayment_payer_email'];
+		if($_POST['x_invoice_num'])	
+		{
+			$inid=$_POST['x_invoice_num'];
+			$mc_currency =  "USD";
+
+			if(current_user_can('contributor') || current_user_can('administrator')) // If booking done by Admin/Contributer
+			{
+				$transaction_type = 'Admin';
+				$payment_status = 'Completed';	
+			}elseif($_POST['amount']==0){    // If booking amount is 0
+				$transaction_type = 'Zero booking'; 	
+				$payment_status = 'Completed';					
+			}else   // When there is no active payment gateway for customer
+			{
+				$transaction_type = 'Not Paid'; 
+				$payment_status = 'Pending';
+			}
+			$sql = "select * from $wpdb->rst_bookings rstbk,$wpdb->rst_shows rsts 
+			where   rsts.id = rstbk.show_id 
+			and rstbk.booking_id =" . $_POST['x_invoice_num'];  
+			//Below condition executes for customer check when there is not active payment gateway - Start
+			if ($results = $wpdb->get_results($sql, ARRAY_A)) {
+				$booking_details = $wpdb->get_results($sql, ARRAY_A);
+				$data = $booking_details[0];
+				$show_name = $booking_details[0]['show_name'];
+				$show_date= $booking_details[0]['show_date'];
+				$booking_details = $booking_details[0]['booking_details'];
+				$ticketno = $rst_options['rst_ticket_prefix'] . $_POST['x_invoice_num'];
+				$booking_details = unserialize($booking_details);
+				$ticket_seat_no=array();
+				for ($row = 0; $row < count($booking_details); $row++) {
+					$seats = $booking_details[$row]['seatno'];
+					$showid = $booking_details[$row]['show_id'];
+					$rowname = $booking_details[$row]['row_name'];
+					$price = $booking_details[$row]['price'];
+					$ticket_seat_no[]=$rowname . $seats;	
+				}
+				$ticket_seat_no=implode(",",$ticket_seat_no);
+				//Preparing to send alert mail to customer to notify that payment for offline method is pending.
+				if($transaction_type=="Not Paid")
+				{
+					$tags = array('{payer_name}', '{payer_email}', '{payment_status}', '{show_name}', '{show_date}', '{seats}','{amount}');
+					$vals = array($payer_name, $payer_offlinepayment, $payment_status,$show_name ,$show_date,$ticket_seat_no,$gross_total );
+					$body = str_replace($tags, $vals, get_option('rst_pending_email_body'));
+					$mail_headers = "Content-Type: text/plain; charset=utf-8\r\n";
+					$mail_headers .= "From: ".get_option('rst_from_name')." <".get_option('rst_from_email').">\r\n";
+					$mail_headers .= "X-Mailer: PHP/".phpversion()."\r\n";
+					wp_mail(/*$email*/$payer_offlinepayment, get_option('rst_pending_email_subject'), $body, $mail_headers);	
+				}				
+
+			}	
+			//Below condition executes for customer check when there is not active payment gateway - End	
+
+
+			$sql = "INSERT INTO rst_payment_transactions (
+				tx_str, payer_name, payer_email, gross, currency, payment_status, transaction_type, details, created, deleted,custom,first_name,last_name,address,city,state,zip,country,phone,show_name,show_date) VALUES (
+				'".mysql_real_escape_string($inid)."',
+				'".mysql_real_escape_string($payer_name)."',
+				'".mysql_real_escape_string($payer_offlinepayment)."',
+				'".floatval($gross_total)."',
+				'".$mc_currency."',
+				'".$payment_status."',
+				'Offline Payment:".$transaction_type."',
+				'".addslashes($paymentData)."',
+				'".time()."', '0','".$_POST['x_custom']."',
+					'".$first_name."',
+					'".$last_name."',
+					'".$street."',
+					'".$city."',
+					'".$state."',
+					'".$zip."',
+					'".$country."',
+					'".$phone."',
+					'".$show_name."',
+					'".$show_date."'
+			)";
+
+			$wpdb->query($sql) or die(mysql_error());
+			$transaction_id=mysql_insert_id();
+			$data = array(
+			'txn_id' => "TXYN".$inid,
+			'mc_gross' => $_POST['amount'],
+			'custom' => $_POST['x_custom']
+			);
+
+			if($transaction_type=="Not Paid") {
+			$data['sendemail']="no"; // Don't send ticket mail if payment is pending
+			}
+			rst_bookseatsfinal($data); // booking seats
+			
+			if($transaction_type!="Not Paid") {			
+				$tags = array('{payer_name}', '{payer_email}', '{payment_status}', '{show_name}', '{show_date}', '{seats}','{amount}');
+				$vals = array($payer_name, $payer_offlinepayment, $payment_status,$show_name ,$show_date,$ticket_seat_no,$gross_total );
+				$body = str_replace($tags, $vals, get_option('rst_success_email_body'));
+
+				$mail_headers = "Content-Type: text/plain; charset=utf-8\r\n";
+				$mail_headers .= "From: ".get_option('rst_from_name')." <".get_option('rst_from_email').">\r\n";
+				$mail_headers .= "X-Mailer: PHP/".phpversion()."\r\n";
+				wp_mail($payer_offlinepayment, get_option('rst_success_email_subject'), $body, $mail_headers);				
+
+			}			
+
+		}
+
+		$logMessages .= "Done.";
+		$wpdb->query("INSERT INTO $wpdb->rst_paypal_ipn_log (booking_time, booking_id, messages) VALUES (now(), '$inid', '$logMessages')");	
+
+		if(current_user_can('contributor') || current_user_can('administrator'))
+		{
+		?><script language='javascript'>
+		alert('Successfully Booked! eTicket.');
+		window.location.href=window.location.href;
+		</script>
+
+		<?php	
+		exit;
+
+		}else{
+
+		$_POST['return']=get_bloginfo("wpurl")."/thank-you?id=".$inid;
+
+		}
+		wp_redirect($_POST['return']); 			
+
+	}		
+}
+
+
+//Class to manage payment gateway modules
+
+
+class row_seats_module {
+
+	var $options = array();
+
+	var $module = array("id" => "", "title" => "", "settings" => false);
+
+
+	
+
+	function __construct() {
+
+		add_filter('row_seats_modules', array(&$this, 'row_seats_modules'));
+		
+	
+	$this->get_options();
+
+	}
+
+	
+
+	function get_options() {
+
+		$exists = get_option('row_seatsmodule_'.$this->module['id'].'_'.'version');
+
+		if ($exists) {
+
+			foreach ($this->options as $key => $value) {
+
+				$this->options[$key] = get_option('row_seatsmodule_'.$this->module['id'].'_'.$key);
+
+			}
+
+		}
+		
+	
+
+	}
+
+
+
+	function update_options() {
+
+		if (current_user_can('manage_options')) {
+
+			foreach ($this->options as $key => $value) {
+
+				update_option('row_seatsmodule_'.$this->module['id'].'_'.$key, $value);
+
+			}
+
+			update_option('row_seatsmodule_'.$this->module['id'].'_'.'version', WPGCMODULE_VERSION);
+
+		}
+
+	}
+
+
+
+	function populate_options() {
+
+		foreach ($this->options as $key => $value) {
+
+			if (isset($_POST['row_seatsmodule_'.$this->module['id'].'_'.$key])) {
+
+				$this->options[$key] = stripslashes($_POST['row_seatsmodule_'.$this->module['id'].'_'.$key]);
+
+			}
+
+		}
+
+	}
+
+
+
+	function check_options($_errors, $_moduleid) {
+
+		return $_errors;
+
+	}
+
+	
+
+	function field_name($option) {
+
+		if (empty($option)) return false;
+
+		return 'row_seatsmodule_'.$this->module['id'].'_'.$option;
+
+	}
+
+	
+
+	function row_seats_modules($modules) {
+
+		if (!empty($this->module['id'])) {
+
+			$modules[$this->module['id']] = array("title" => $this->module['title'], "settings" => $this->module['settings']);
+
+		}
+
+		return $modules;
+
+	}
+
+	
+
+	function page_switcher ($_urlbase, $_currentpage, $_totalpages) {
+
+		$pageswitcher = "";
+
+		if ($_totalpages > 1) {
+
+			$pageswitcher = '<div class="tablenav bottom"><div class="tablenav-pages">'.__('Pages:', 'row_seats').' <span class="pagiation-links">';
+
+			if (strpos($_urlbase,"?") !== false) $_urlbase .= "&amp;";
+
+			else $_urlbase .= "?";
+
+			if ($_currentpage == 1) $pageswitcher .= "<a class='page disabled'>1</a> ";
+
+			else $pageswitcher .= " <a class='page' href='".$_urlbase."p=1'>1</a> ";
+
+
+
+			$start = max($_currentpage-3, 2);
+
+			$end = min(max($_currentpage+3,$start+6), $_totalpages-1);
+
+			$start = max(min($start,$end-6), 2);
+
+			if ($start > 2) $pageswitcher .= " <b>...</b> ";
+
+			for ($i=$start; $i<=$end; $i++) {
+
+				if ($_currentpage == $i) $pageswitcher .= " <a class='page disabled'>".$i."</a> ";
+
+				else $pageswitcher .= " <a class='page' href='".$_urlbase."p=".$i."'>".$i."</a> ";
+
+			}
+
+			if ($end < $_totalpages-1) $pageswitcher .= " <b>...</b> ";
+
+
+
+			if ($_currentpage == $_totalpages) $pageswitcher .= " <a class='page disabled'>".$_totalpages."</a> ";
+
+			else $pageswitcher .= " <a class='page' href='".$_urlbase."p=".$_totalpages."'>".$_totalpages."</a> ";
+
+			$pageswitcher .= "</span></div></div>";
+
+		}
+
+		return $pageswitcher;
+
+	}
+
+}
+
+
+
+
 
 
 ?>

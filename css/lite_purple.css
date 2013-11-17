@@ -466,11 +466,30 @@ div#container{
 }
 /*changed by mahesh 20120512*/
 .stage-hdng{
-   background: url("../images/stage.png") no-repeat scroll center top transparent !important;
-    /*float: left !important;*/
-    height: 60px !important;
-    width: 600px !important;
-    margin:0 0 25px -3px !important;
+/*
+//  background: url("../images/stage.png") no-repeat scroll center top transparent !important;
+//    float: left !important;
+//   height: 60px !important;
+//   width: 300px !important;
+//   margin:0 0 25px -3px !important;
+*/
+    margin: 15px;
+	padding:25px 0px 25px 0px !important;
+	valign:middle !important;
+	align:left !important;
+text-align: center !important;
+vertical-align: middle !important;
+
+    background: none repeat scroll 0 0 transparent !important;
+    color: black !important;
+    outline: none !important;
+    font-size: 30px !important;
+    height: 30px !important;
+    color: #848383 !important;
+    cursor: default !important;
+    text-shadow: 2px 2px 2px;
+    filter: progid:DXImageTransform.Microsoft.DropShadow(OffX=2, OffY=2, Color=#D7D7D7);
+	
 }
 .cartitems{
   clear:both !important;
@@ -761,7 +780,7 @@ q:before, q:after {
   border: none !important;
 }
 .gpBdrRight label{
-  float: left!important;
+  float: left //!important;
   padding:0 10px 0 0!important;
   width:50px !important;
   margin:0 !important;
@@ -776,7 +795,7 @@ q:before, q:after {
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1) inset !important;
     color: #888888 !important;
     float: left ;
-    width: 250px;
+    width: 300px;
     margin:0 !important;
     padding:5px !important;
       font-size: 12px !important;

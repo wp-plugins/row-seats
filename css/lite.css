@@ -933,19 +933,31 @@ div#container{
 }
 
 /*changed by mahesh 20120512*/
+.stage-hdng{
+/*
+//  background: url("../images/stage.png") no-repeat scroll center top transparent !important;
+//    float: left !important;
+//   height: 60px !important;
+//   width: 300px !important;
+//   margin:0 0 25px -3px !important;
+*/
+    margin: 15px;
+	padding:25px 0px 25px 0px !important;
+	valign:middle !important;
+	align:left !important;
+text-align: center !important;
+vertical-align: middle !important;
 
-//.stage-hdng{
-
-   background: url("../images/stage.png") no-repeat scroll center top transparent !important;
-
-    /*float: left !important;*/
-
-    height: 60px !important;
-
-    width: 600px !important;
-
-    margin:0 0 25px -3px !important;
-
+    background: none repeat scroll 0 0 transparent !important;
+    color: black !important;
+    outline: none !important;
+    font-size: 30px !important;
+    height: 30px !important;
+    color: #848383 !important;
+    cursor: default !important;
+    text-shadow: 2px 2px 2px;
+    filter: progid:DXImageTransform.Microsoft.DropShadow(OffX=2, OffY=2, Color=#D7D7D7);
+	
 }
 
 .cartitems{
@@ -1526,7 +1538,7 @@ q:before, q:after {
 
 .gpBdrRight label{
 
-  float: left!important;
+  float: left  //!important;
 
   padding:0 10px 0 0!important;
 
@@ -1556,7 +1568,7 @@ q:before, q:after {
 
     float: left ;
 
-    width: 250px;
+    width: 300px;
 
     margin:0 !important;
 
@@ -1931,6 +1943,5 @@ margin-top:0px \0/ !important;
 float:none;
 
 } /* IE9 */
-
 
 

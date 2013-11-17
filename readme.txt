@@ -6,8 +6,8 @@ Author URI: http://www.rowseatsplugin.com/row-seats-plugin-information
 Donate link: http://www.rowseatsplugin.com/row-seats-plugin-information
 Tags: row seats, booking seats, event booking, shows booking, event manager, booking events, sell seats, booking tickets, ticket booth, paypal booking
 Requires at least: 3.2
-Tested up to: 3.6
-Stable tag: 2.6
+Tested up to: 3.8
+Stable tag: 2.16
 
 Booking seats is easier with Row Seats plugin. This is a new solution to the increasing request to sell seats.
 
@@ -66,6 +66,27 @@ The shortcode will work in any page or post. You can obtain the shortcode after 
 
 
 == Changelog ==
+
+= 2.16 =
+* Overall better functions
+* Added support for multi languages <a title="Row Seats add-ons" href="https://www.rowseatsplugin.com/products" target="_blank">(available as an add-on)</a>
+* Stage graphic omitted, opted for text so it can be translated
+
+= 2.14 =
+* Minor bugs fixes
+
+= 2.12 =
+* Fixed a small bug with Offline Payment gateway.
+
+= 2.10 =
+* Fixed a small bug with Offline Reservation in Core, it caused event dates that ended to still show as active.
+
+= 2.9 =
+* restructure core to take new payment gateways (available seperately) such as stripe, authorize.net, paypal pro
+* new payment settings page added
+* new currency symbol dropdown selection added.  This will add the ability to show currency symbol in the seat chart. Currently there are only 5 symbols available
+* new Payment Settings submenu added
+* new Payment Transactions submenu added
 
 = 2.6 =
 * chart resizing up to 70% [zoom in/out]. Handy for big charts

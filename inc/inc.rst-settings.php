@@ -15,11 +15,15 @@
     }
 </style>
 <?php
+
+
 $updated = '';
 $validmsg = '';
 $validated = 'no';
 if (isset($_POST) && $_POST['Submit'] == 'Save Settings') {
+//print "Inside";
     update_option(RSTPLN_OPTIONS, $_POST);
+	//do_action('row_seats_save_options');
     $updated = 'yes';
 }
 if (isset($_POST) && $_POST['l_action'] == 'pleasevalidate') {
@@ -279,14 +283,14 @@ phone: (818) 555-5555<br/>
     </td>
 </tr><!-- Special Pricing Email Subject ----- --><?php echo apply_filters('special_pricing_email_filter','', $rst_options); ?><!-- ----- Special Pricing Email Subject -->
 
-            <tr valign="top">
+            <!--<tr valign="top">
                 <th scope="row"><label for="name"><?php echo __('Disable JQuery', 'rst'); ?></label>
                 </th>
                 <td>
                     <input name="rst_enable_jquery" id="rst_enable_jquery" type="checkbox"
                            value="off" <?php  if ($rst_options['rst_enable_jquery'] == 'off') echo 'checked'; ?>/>
                 </td>
-            </tr>
+            </tr>-->
             <tr valign="top">
                 <th scope="row">
                 </th>
@@ -295,11 +299,16 @@ phone: (818) 555-5555<br/>
                         <input type="submit" value="Save Settings" class="button-primary" name="Submit"/>
                     </p></td>
             </tr>
+
+			
             </tbody>
 
 
         </table>
-
+			<?php
+			//do_action('row_seats_echo_options_box');
+		
+			?>
 
     </form>
 
@@ -318,13 +327,21 @@ phone: (818) 555-5555<br/>
     <div id="post-body">
         <div id="post-body-content">
             <div class="stuffbox">
-                <h3><label for="link_name"><?php _ex('Row Seats Calendar addon', 'rst') ?></label></h3>
+                <h3><label for="link_name"><?php _ex('ROW SEATS PRODUCTS', 'rst') ?></label></h3>
 
                 <div class="inside">
 
-                    <p><a href="http://www.rowseatsplugin.com/calendar" target="_blank"><img
+                    <p><a href="http://www.rowseatsplugin.com/" target="_blank"><img
                                 style="cursor:pointer;"
-                                src="<?php echo RSTPLN_URL ?>images/row-seats-addon-calendar.jpg"/></a>
+                                src="<?php echo RSTPLN_URL ?>images/multi-language.jpg"/></a>
+                        </a></p>                    
+                    <p><a href="http://www.rowseatsplugin.com/row-seats-add-on-qr-code-tickets" target="_blank"><img
+                                style="cursor:pointer;"
+                                src="<?php echo RSTPLN_URL ?>images/row-seats-qr-tix-ad.jpg"/></a>
+                        </a></p>
+                    <p><a href="http://www.rowseatsplugin.com/" target="_blank"><img
+                                style="cursor:pointer;"
+                                src="<?php echo RSTPLN_URL ?>images/row-seats-cortesia-theme.jpg"/></a>
                         </a></p>
                     </p>
 

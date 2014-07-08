@@ -55,6 +55,17 @@ c) Day view - same as week view above.
 
 Very important to first press "Save Settings" button, even if you have not filled out all the information fields. The shortcode will work in any page or post. You can obtain the shortcode after you upload your seating chart (CSV file).  Make sure that the shortcode starts with [showseats id=X] (X represents the id number).
 
+= I received plugin an update plugin notice from dashboard, should I update while having "live" bookings? =
+It is strongly advised that you only update when bookings are past. But, if you need to update while you have 'live' bookings, then do the following:
+
+Through FTP
+
+• First, take a full db backup of Row Seats through your server panel (usually using phpmyadmin) should you need to restore, then deactivate the plugin.  Afterwards, upload the new version through ftp overwriting  all Row Seats files.  If you made any customization, you'll loose them.
+
+Through WP Dashboard
+
+• First, take a full db backup of Row Seats through your server panel (usually using phpmyadmin) should you need to restore, then deactivate the plugin.  Afterwards, delete the old plugin version and upload the new version.  If you made any customization, you'll loose them.
+
 = How do I access extra functionality, or extra settings? =
 
 Our plugin is always updated to our customers first.  The core will always be the latest from our website (not from this repository). For added functionality we have modules that will bring new features to Row Seats. You can visit our site for more information http://www.rowseatsplugin.com/products

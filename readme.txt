@@ -55,9 +55,12 @@ c) Day view - same as week view above.
 
 Very important to first press "Save Settings" button, even if you have not filled out all the information fields. The shortcode will work in any page or post. You can obtain the shortcode after you upload your seating chart (CSV file).  Make sure that the shortcode starts with [showseats id=X] (X represents the id number).
 
-= How do I access extra functionality, or extra settings?
+= How do I access extra functionality, or extra settings? =
 
 Our plugin is always updated to our customers first.  The core will always be the latest from our website (not from this repository). For added functionality we have modules that will bring new features to Row Seats. You can visit our site for more information http://www.rowseatsplugin.com/products
+
+= Shortcode for user email confirmation to be shown in page/post =
+You can use the following shortcode [rowseatthankspage] in any page or post, this will populate the same information as you would in an email confirmation.
 
 == Screenshots ==
 
@@ -77,6 +80,7 @@ Our plugin is always updated to our customers first.  The core will always be th
 = 2.32 =
 * Added Row Seats Event widget, it will show all events that are in pages
 * Additional currency symbols added (Swedish & Norwegian Krone, Polish Złoty, Brazilian Reals, Malaysian Ringgit, Philippine Peso, Indian Rupee, Hungarian Forint, Russian Ruble, Swiss Franc, Czech Koruna)
+* Added shortcode for email confirmation shown on any page/post, use shortcode [rowseatthankspage]
 
 = 2.30 =
 * Fixed several warnings on particular servers 

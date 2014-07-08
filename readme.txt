@@ -60,11 +60,11 @@ It is strongly advised that you only update when bookings are past. But, if you 
 
 Through FTP
 
-• First, take a full db backup of Row Seats through your server panel (usually using phpmyadmin) should you need to restore, then deactivate the plugin.  Afterwards, upload the new version through ftp overwriting  all Row Seats files.  If you made any customization, you'll loose them.
+• First, take a full db backup of Row Seats Core through your server panel (usually using phpmyadmin) should you need to restore, then deactivate the plugin.  Afterwards, upload the new version through ftp overwriting  all Row Seats files.  If you made any customization, you'll loose them.
 
 Through WP Dashboard
 
-• First, take a full db backup of Row Seats through your server panel (usually using phpmyadmin) should you need to restore, then deactivate the plugin.  Afterwards, delete the old plugin version and upload the new version.  If you made any customization, you'll loose them.
+• First, take a full db backup of Row Seats Core through your server panel (usually using phpmyadmin) should you need to restore.  Afterwards, you can update normally through WP plugin section
 
 = How do I access extra functionality, or extra settings? =
 

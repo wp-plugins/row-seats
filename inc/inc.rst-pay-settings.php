@@ -17,11 +17,22 @@
 <?php
 $symbol = array(
     "0" => "$",
-    "1" => "&pound;",
-    "2" => "&euro;",
-    "3" => "&#3647;",
-    "4" => "&#8362;",
-    "5" => "&yen;");
+        "1" => "&pound;",
+        "2" => "&euro;",
+        "3" => "&#3647;",
+        "4" => "&#8362;",
+        "5" => "&yen;",
+        "6" => "&#8377;",
+        "7" => "R$",
+        "8" => "kr",
+        "9" => "zł",
+        "10" => "Ft",
+        "11" => "Kč",
+        "12" => "&#1088;&#1091&#1073;",
+        "13" => "&#164;",
+        "14" => "&#x20B1;",
+        "15" => "Fr",
+        "16" => "RM");
 $currencies=array();
 $currencies = apply_filters('row_seats_currencies', $currencies); //getting currency list from all payment gateways
 //array of payment setting variables
@@ -52,11 +63,81 @@ if (isset($_POST) && $_POST['l_action'] == 'pleasevalidate') {
 
 $rst_options = get_option(RSTPLN_OPTIONS);
 //Start populating payment custom variables
-
+$defaultpopulate="Yes";
 	foreach($rst_payment_settings as $paymentvars)
 	{
 	$rst_options[$paymentvars] = get_option($paymentvars);
+	if($rst_options[$paymentvars])
+	{
+	$defaultpopulate="No";
 	}
+	}
+if($_REQUEST['resettodefault']=="yes")
+{
+$defaultpopulate="Yes";
+
+}	
+if($defaultpopulate=="Yes")
+{
+$mydata=array();
+
+$mydata['rst_currencysymbol']= $symbol[0];
+$mydata['rst_currency']= "USD";
+$mydata['rst_from_name']= "Row seat";
+$mydata['rst_from_email']= "admin@rowseatsplugin.com";
+$mydata['rst_success_email_subject']= "Payment Success  - Your ticket is ready";
+$mydata['rst_success_email_body']= "Dear {payer_name},
+
+We received your booking seat(s) details, there were sent to {payer_email} for the following show:  
+
+Show: {show_name}
+Show Date: {show_date}
+Seats Selected:{seats}
+Total due: {amount}
+
+The payment status of your booking is {payment_status}. 
+
+Enjoy the show.
+
+Administration";
+$mydata['rst_failed_email_subject']= "Payment failed";
+$mydata['rst_failed_email_body']= "Payment failed 
+
+{payer_name
+{payer_email}
+{payment_status}";
+$mydata['rst_pending_email_subject']= "offline payment - please make payment asap";
+$mydata['rst_pending_email_body']= "Dear {payer_name},
+
+We received your booking seat(s) details, there were sent to {payer_email} for the following show:  
+
+Show: {show_name}
+Show Date: {show_date}
+Seats Selected:{seats}
+Total due: {amount}
+
+The payment status of your booking is {payment_status}.  Once payment is received, we will email you a confirmation of your booked seats.
+
+Enjoy the show.
+
+Administration";
+
+	foreach($rst_payment_settings as $paymentvars)
+	{
+		update_option($paymentvars, $mydata[$paymentvars]);	//Update custom vairables
+	}
+	foreach($rst_payment_settings as $paymentvars)
+	{
+	$rst_options[$paymentvars] = get_option($paymentvars);
+
+	}
+?>
+    <script>
+        window.location = '<?php echo get_option('siteurl')?>/wp-admin/admin.php?page=rst-pay-settings';
+    </script>
+<?php	
+	
+}	
 
 if ($rst_options['rst_adminetemp'] == '') {
     $rst_options['rst_adminetemp'] = "Dear <blogname>,
@@ -182,7 +263,7 @@ echo '<tr>
 
 											<input type="text" id="rst_success_email_subject" name="rst_success_email_subject" value="'.stripslashes(htmlspecialchars($rst_options['rst_success_email_subject'], ENT_QUOTES)).'" class="widefat">
 
-											<br /><em>'.__('In case of pending, non-cleared or fake payment, your customers receive e-mail message about that. This is subject field of the message.', 'row_seats').'</em>
+											<br /><em>'.__('Notify your customers of successful charge. This is subject field of the message.', 'row_seats').'</em>
 
 										</td>
 
@@ -194,7 +275,7 @@ echo '<tr>
 
 											<textarea id="rst_success_email_body" name="rst_success_email_body" style="height: 120px;" class="widefat">'.stripslashes(htmlspecialchars($rst_options['rst_success_email_body'], ENT_QUOTES)).'</textarea>
 
-											<br /><em>'.__('This e-mail message is sent to your customers in case of successful and cleared payment. You can use the following keywords: {payer_name}, {payer_email}, {certificate_title}, {certificate_url}.', 'wpgc').'</em>
+											<br /><em>'.__('This e-mail message is sent to your customers in case of successful and cleared payment. You can use the following keywords: {payer_name}, {payer_email}.', 'wpgc').'</em>
 
 										</td>
 
@@ -252,7 +333,7 @@ echo '<tr>
 
 									</tr><tr><td></td><td align=right>
 																<div class="alignright">
-								<input type="submit" class="row_seats_button button-primary" name="Submit" value="'.__('Save Settings', 'row_seats').'">
+								<input type="button" onclick="if (confirm(\'Are you sure?\')) {  window.location.href=\''.get_option('siteurl').'/wp-admin/admin.php?page=rst-pay-settings&resettodefault=yes\'}" class="row_seats_button button-primary" name="reset" value="'.__('Reset to default', 'row_seats').'">&nbsp;<input type="submit" class="row_seats_button button-primary" name="Submit" value="'.__('Save Settings', 'row_seats').'">
 							</div><br><br>
 									
 									</td></tr>';	

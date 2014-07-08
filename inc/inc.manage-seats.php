@@ -271,12 +271,12 @@ if ($showname != '') {
                         if ($data['status'] == 'empty') {
                             ?>
                             <span class='edit'>
-                    <a href="javascript:void(0);" title="Edit this show" onclick="editform('<?= $data[id] ?>');">Add
+                    <a href="javascript:void(0);" title="Edit this show" onclick="editform('<?php echo $data[id]; ?>');">Add
                         Seats</a>
                     | </span>
                         <?php } else if ($bookings == 0) { ?>
                             <span class='edit'>
-                    <a href="javascript:void(0);" title="Edit this show" onclick="editform('<?= $data[id] ?>');">Update
+                    <a href="javascript:void(0);" title="Edit this show" onclick="editform('<?php echo $data[id]; ?>');">Update
                         Seats</a>
                     | </span>
                         <?php } ?>
@@ -285,7 +285,7 @@ if ($showname != '') {
                        href="javascript:void(0);"
                        onclick="deleteform('<?= $data[id] ?>');">Delete</a> |</span>
                     <span class='edit'>
-                    <a href="javascript:void(0);" title="Edit this show" onclick="SeetheShow('<?= $data[id] ?>');">See
+                    <a href="javascript:void(0);" title="Edit this show" onclick="SeetheShow('<?php echo $data[id]; ?>');">See
                         the Show</a>
                     | </span>
 

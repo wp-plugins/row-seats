@@ -12,6 +12,121 @@
     });
 </script><?php echo "  <h2>" . __('RST Reports:', 'rst') . "</h2>"; ?>
 <?php
+//3nowe
+global $wpdb;
+if(isset($_REQUEST['ctxnid']))
+{
+        $sql = "select * from $wpdb->rst_bookings rstbk,$wpdb->rst_booking_seats_relation bsr,$wpdb->rst_shows rsts
+
+        where (rstbk.payment_status ='ipn_verified' OR rstbk.payment_status ='offline_registration')
+
+        and bsr.booking_id = rstbk.booking_id
+
+        and rsts.id = bsr.show_id
+
+        and bsr.txn_id ='" . $_REQUEST['ctxnid']."'";
+		//print $sql;
+
+        if ($results = $wpdb->get_results($sql, ARRAY_A)) {
+
+            $booking_details = $wpdb->get_results($sql, ARRAY_A);
+            $data = $booking_details;
+			$txn_id=$data[0]['txn_id'];
+			//print "<br><br>--------------".$txn_id;
+			
+			if($txn_id)
+			{
+            sendrstmail($data, $txn_id);
+			}
+
+        }
+
+}
+
+if(isset($_REQUEST['Update']))
+{
+	$sql=mysql_query("update  rst_bookings set name='".$_REQUEST['b_by']."',email='".$_REQUEST['email']."',phone='".$_REQUEST['phone']."' where booking_id='".$_REQUEST['bid']."'");
+
+	//$ssql=mysql_query("update  rst_booking_seats_relation set ticket_no='".$_REQUEST['t_no']."',ticket_seat_no='".$_REQUEST['ts_no']."',txn_id='".$_REQUEST['txn_id']."',seat_cost='".$_REQUEST['seat_cost']."' where id='".$_REQUEST['hid']."'");
+	
+	$etrafound=mysql_query("select * from rst_bookings where booking_id='".$_REQUEST['bid']."'");
+$asql=mysql_fetch_array($etrafound);
+
+
+$item['booking_details']=$asql['booking_details'];
+$extra=unserialize ($item['booking_details']);
+if($extra['customfield']!=''){
+foreach ($extra['customfield'] as $key => $val){
+
+	//echo $key.':  '.$_REQUEST[$key].'<br/>'.'<br/>';
+	$key_name=str_replace(" ","_",$key);
+	$extra['customfield'][$key]=$_REQUEST[$key_name];
+	
+	?>
+    
+	<?php }
+	//print_r($extra['customfield']);
+//print_r($extra);
+$extra+=$extra['customfield'];
+
+$booking=serialize($extra);
+	//print_r($booking);
+$update_customfield=mysql_query("update  rst_bookings set booking_details='".$booking."' where booking_id='".$_REQUEST['bid']."'");	
+//print_r($_REQUEST['bid']);
+//exit;
+	}
+}
+
+if(isset($_REQUEST['booking_id']))
+{
+$edit=$_SERVER['PHP_SELF'].'?page='.$_REQUEST['page'].'&rstfilter='.$_GET['rstfilter'].'&rst_rpfrom='.$_GET['rst_rpfrom'].'&rst_rpto='.$_GET['rst_rpto'].'&action='.$_GET['action'];
+	//$sql=mysql_query("select * from  rst_bookings as rb inner join rst_booking_seats_relation as rr inner join rst_shows as rs where rr.booking_id='".$_REQUEST['booking_id']."' and rr.booking_id=rb.booking_id and rb.show_id= rs.id ");
+	//$ssql=mysql_query("select * from rst_booking_seats_relation where booking_id='".$_REQUEST['booking_id']."'");
+	//$valuee=mysql_fetch_array($ssql);
+	//$value=mysql_fetch_array($sql);
+	
+$sql="select * from  rst_bookings as rb inner join rst_booking_seats_relation as rr inner join rst_shows as rs where rr.booking_id='".$_REQUEST['booking_id']."' and rr.booking_id=rb.booking_id and rb.show_id= rs.id ";
+$value = $wpdb->get_row($sql, ARRAY_A);
+$sql="select * from rst_booking_seats_relation where booking_id='".$_REQUEST['booking_id']."'";
+$valuee = $wpdb->get_row($sql, ARRAY_A);
+	
+//for etra edit
+//$etrafound=mysql_query("select * from rst_bookings where booking_id='".$_REQUEST['booking_id']."'");
+//$asql=mysql_fetch_array($etrafound);
+$sql="select * from rst_bookings where booking_id='".$_REQUEST['booking_id']."'";
+$asql = $wpdb->get_row($sql, ARRAY_A);
+
+
+$item['booking_details']=$asql['booking_details'];
+$extra=unserialize ($item['booking_details']);
+?><form method="post" action="<?php echo $edit; ?>">
+    
+    <table>
+      <tr><td>Booked By</td><td><input type="text" name="b_by" value="<?php echo $value['name'];  ?>"/></td></tr>
+       <tr><td>Email</td><td><input type="text" name="email" value="<?php echo $value['email'];  ?>" /></td></tr>
+       <tr><td>Phone</td><td><input type="text" name="phone"  value="<?php echo $value['phone'];  ?>"/></td></tr>
+       <!--<tr><td>Booking ID</td><td><input type="text" name="t_no" value="<?php echo $value['ticket_no'];  ?>"/></td></tr>
+       <tr><td>Ticket No</td><td><input type="text" name="ts_no" value="<?php echo $value['ticket_seat_no'];  ?>"/></td></tr>
+        <tr><td>TXN ID</td><td><input type="text" name="txn_id" value="<?php echo $value['txn_id'];  ?>"/></td></tr>
+        <tr><td>Seat Cost</td><td><input type="text" name="seat_cost" value="<?php echo $value['seat_cost'];  ?>"/></td></tr>-->
+        <?php
+		
+		if($extra['customfield']!=''){
+foreach ($extra['customfield'] as $key => $val){
+$key_name=str_replace(" ","_",$key);
+
+?>
+    <tr><td><?php echo $key;?></td><td><input type="text" name="<?php echo $key_name;?>" value="<?php echo $val;?>" /></td></tr>
+	<?php }
+	
+}
+	?>
+        
+         <tr><td><input type="hidden" name="bid" value="<?php echo $value['booking_id'];  ?>" /></td><td><input type="submit" name="Update" value="Update" /></td><td><input type="submit" name="Cancel" value="Cancel" /></td><td><input type="hidden" name="hid" value="<?php echo $valuee['id'];  ?>" /></td></tr>
+         </table>
+         </form>
+       
+<?php }
 $rst_paypal_options = get_option(RSTPLN_PPOPTIONS);
 $rst_paypal_options = get_option(RSTPLN_PPOPTIONS);
 
@@ -36,9 +151,45 @@ $filter = '';
 $from = '';
 $to = '';
 
-if($_REQUEST['bookingid'])
-{
 
+
+if($_REQUEST['id'])
+{
+	function custom_admin_css() {
+   echo '<style type="text/css">
+   			#adminmenuback {visibility:hidden}
+		   #adminmenuwrap {visibility:hidden}
+		   #wpadminbar {visibility:hidden}
+		   #message {visibility:hidden}
+		   #wpbody-content h2 {visibility:hidden}
+		
+		   
+		   
+         </style>';
+}
+
+
+//add_action('admin_head', 'custom_admin_css');
+echo custom_admin_css();
+
+$sql="select * from rst_bookings where booking_id='".$_REQUEST['id']."'";
+$asql = $wpdb->get_row($sql, ARRAY_A);
+
+
+//$sql=mysql_query("select * from rst_bookings where booking_id='".$_REQUEST['id']."'");
+//$asql=mysql_fetch_array($sql);
+$item['booking_details']=$asql['booking_details'];
+$extra=unserialize ($item['booking_details']);
+			if($extra['customfield']!=''){
+			foreach ($extra['customfield'] as $key => $value){
+	echo $key.':  '.$value.'<br/>'.'<br/>';}
+
+exit;}
+else
+{
+	echo 'No Extra details found';
+	exit;
+}
 }
 if (isset($_REQUEST['paged']) && $_REQUEST['paged'] != '') {
     if (isset($_SESSION['rstfilter']) && $_SESSION['rstfilter'] != '') {
@@ -168,7 +319,7 @@ class Projects_Reposts_Table extends WP_List_Table_Custom
             case 'name':
             case 'email':
             case 'phone':
-            case 'ticket_no':
+		    case 'ticket_no':
             case 'ticket_seat_no':
             case 'txn_id':
             case 'seat_cost':
@@ -178,10 +329,66 @@ class Projects_Reposts_Table extends WP_List_Table_Custom
             case 'fees':
             case 'booking_time':
             case 'booking_status':
+           
+		   return $item[$column_name];
+		     
+			 
+			 case 'booking_details':
+			 $installedplugins = get_option('active_plugins');
+		
+		 $result='row-seats-checkout-customfield/row-seats-checkout-custom-fields.php';
+		 
+		 if (in_array($result, $installedplugins)) {
+                      $checkplugin='true';
 
-                return $item[$column_name];
+			
+?>
+
+<a href="<?php echo $_SERVER['PHP_SELF'].'?page=rst-reports&id='.$item['booking_id']; ?>" onclick="load_window('<?php echo $_SERVER['PHP_SELF'].'?page=rst-reports&id='.$item['booking_id']; ?>');return false;">Details</a>
+
+
+<script type="application/javascript">
+	function load_window(url){
+		var url = url;
+		var centerX = (screen.width - 500) / 2;
+		var centerY = (screen.height - 300) / 2;
+		window.open(url,'1389699028581','toolbar=0,menubar=0,location=1,width=400,height=250,status=1,scrollbars=1,resizable=0,left='+centerX+',top='+centerY);
+	
+	}
+</script>
+
+
+
+<?php
+
+		 }
+		 else
+		 {
+		 }
+
+
+			 //$item['booking_details']=print_r($extra['customfield']);
+			 
+			 break;
+			 
             default:
-                return print_r($item, true); //Show the whole array for troubleshooting purposes
+               return print_r($item, true); //Show the whole array for troubleshooting purposes
+			   //3nowe
+			case 'action':
+			if(isset($_GET['rstfilter'])){
+				
+				$edit=$_SERVER['PHP_SELF'].'?rstfilter='.$_GET['rstfilter'].'&rst_rpfrom='.$_GET['rst_rpfrom'].'&rst_rpto='.$_GET['rst_rpto'].'&action='.$_GET['action'].'&page='.$_REQUEST['page'].'&booking_id='.$item['booking_id'];
+				$resend=$_SERVER['PHP_SELF'].'?rstfilter='.$_GET['rstfilter'].'&rst_rpfrom='.$_GET['rst_rpfrom'].'&rst_rpto='.$_GET['rst_rpto'].'&action='.$_GET['action'].'&page='.$_REQUEST['page'].'&ctxnid='.$item['txn_id'];
+				}
+				else{
+			
+			$edit=$_SERVER['PHP_SELF'].'?page='.$_REQUEST['page'].'&booking_id='.$item['booking_id'];
+			$resend=$_SERVER['PHP_SELF'].'?page='.$_REQUEST['page'].'&ctxnid='.$item['txn_id'];
+			}
+			//print_r($item);
+			echo '<a href="'.$edit.'">Edit</a>&nbsp;|&nbsp;<a href="'.$resend.'">Resend mail</a>';
+      
+			   
         }
     }
 
@@ -212,8 +419,18 @@ class Projects_Reposts_Table extends WP_List_Table_Custom
     }
 
 
+
     function get_columns()
     {
+ $installedplugins = get_option('active_plugins');
+		
+		 $result='row-seats-checkout-customfield/row-seats-checkout-custom-fields.php';
+		 
+		 if (in_array($result, $installedplugins)) {
+                      $checkplugin='true';
+
+
+
 
         if ($wpfeeoptions['rst_enable_fee'] == 'on') {
             $columns = array(
@@ -223,6 +440,7 @@ class Projects_Reposts_Table extends WP_List_Table_Custom
                 'email' => 'Email',
                 'phone' => 'Phone',
                 'ticket_no' => 'Booking ID',
+				'booking_details' => 'EF Info',
                 'ticket_seat_no' => 'Ticket No',
                 'txn_id' => 'TXN ID',
                 'seat_cost' => 'Seat Cost',
@@ -232,10 +450,11 @@ class Projects_Reposts_Table extends WP_List_Table_Custom
                 'fees' => $wpfeeoptions['fee_name'],
                 'booking_time' => 'Booked On',
                 'booking_status' => 'Booking Status',
-
+				//3nowe
+                  'action' => 'Action',
 
             );
-        } else {
+        } else if($wpfeeoptions['rst_enable_fee'] != 'on') {
             $columns = array(
                 'show_name' => 'Event Name',
                 'show_date' => 'Event Date',
@@ -243,6 +462,7 @@ class Projects_Reposts_Table extends WP_List_Table_Custom
                 'email' => 'Email',
                 'phone' => 'Phone',
                 'ticket_no' => 'Booking ID',
+				'booking_details' => 'EF Info',
                 'ticket_seat_no' => 'Ticket No',
                 'txn_id' => 'TXN ID',
                 'seat_cost' => 'Seat Cost',
@@ -251,11 +471,66 @@ class Projects_Reposts_Table extends WP_List_Table_Custom
                 'c_discount' => 'Coupon Discount',
                 'booking_time' => 'Booked On',
                 'booking_status' => 'Booking Status',
-
+				//3nowe
+                    'action' => 'Action',
 
             );
         }
+		
+		 }
+		 
+		 else
+		 
+		 {
+			if ($wpfeeoptions['rst_enable_fee'] == 'on') {
+            $columns = array(
+                'show_name' => 'Event Name',
+                'show_date' => 'Event Date',
+                'name' => 'Booked By',
+                'email' => 'Email',
+                'phone' => 'Phone',
+                'ticket_no' => 'Booking ID',
+				'ticket_seat_no' => 'Ticket No',
+                'txn_id' => 'TXN ID',
+                'seat_cost' => 'Seat Cost',
+                'total_paid' => 'Total Paid',
+                'c_code' => 'Coupon',
+                'c_discount' => 'Coupon Discount',
+                'fees' => $wpfeeoptions['fee_name'],
+                'booking_time' => 'Booked On',
+                'booking_status' => 'Booking Status',
+				//3nowe
+                  'action' => 'Action',
 
+            );
+        } else if($wpfeeoptions['rst_enable_fee'] != 'on') {
+            $columns = array(
+                'show_name' => 'Event Name',
+                'show_date' => 'Event Date',
+                'name' => 'Booked By',
+                'email' => 'Email',
+                'phone' => 'Phone',
+                'ticket_no' => 'Booking ID',
+			    'ticket_seat_no' => 'Ticket No',
+                'txn_id' => 'TXN ID',
+                'seat_cost' => 'Seat Cost',
+                'total_paid' => 'Total Paid',
+                'c_code' => 'Coupon',
+                'c_discount' => 'Coupon Discount',
+                'booking_time' => 'Booked On',
+                'booking_status' => 'Booking Status',
+				//3nowe
+                    'action' => 'Action',
+
+            );
+        } 
+			 
+			 
+		 }
+		 
+		 
+		 
+		 
         return $columns;
     }
 
@@ -1381,6 +1656,8 @@ class WP_List_Table_Custom {
 	 *
 	 * @param object $item The current item
 	 */
+	 
+	 
 	function single_row_columns( $item ) {
 		list( $columns, $hidden ) = $this->get_column_info();
 

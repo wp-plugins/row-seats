@@ -1,10 +1,13 @@
 <?php
-
+function widgets_init() {
+	register_widget('allevents_widget');
+}
+	
 function rst_transaction_details()
 {
 global $wpdb;
 
-//Displaying transaction details on admin side
+//Displaying transaction details on admin liftOff
 
 					if($_GET['action']=="rst-transaction-details")
 					{
@@ -16,7 +19,7 @@ global $wpdb;
 								echo '
 								<html>
 								<head>
-									<title>'.__('Transaction Details', 'wpgc').'</title>
+									<title>'.__('Transaction Details', 'rst').'</title>
 								</head>
 								<body>
 									<table style="width: 100%;">';
@@ -83,6 +86,7 @@ global $wpdb;
 							$booking_details = $wpdb->get_results($sql, ARRAY_A);       
 							$data = $booking_details;
 							$show_name = $booking_details[0]['show_name'];
+							
 							$show_date= $booking_details[0]['show_date'];
 							$booking_details = $booking_details[0]['booking_details'];
 							$ticketno = $rst_options['rst_ticket_prefix'] . $_POST['x_invoice_num'];
@@ -155,7 +159,7 @@ global $wpdb;
 								'phone' => __('Phone', 'row_seats')							
 							);
 
-							//$transaction_columns = apply_filters('wpgc_payment_transaction_csv_columns', $transaction_columns);
+
 							$i = 0;
 							foreach($transaction_columns as $value) {
 								echo ($i > 0 ? $separator : '').'"'.str_replace('"', '', $value).'"';
@@ -182,7 +186,7 @@ global $wpdb;
 									'country' =>$row['country'],
 									'phone' =>$row['phone']							
 								);
-								//$transaction_column_values = apply_filters('wpgc_payment_transaction_csv_column_values', $transaction_column_values, $row);
+
 								$i = 0;
 								foreach($transaction_column_values as $value) {
 									echo ($i > 0 ? $separator : '').'"'.str_replace('"', '', $value).'"';
@@ -200,7 +204,6 @@ global $wpdb;
 }
 function wp_row_seats_signup_call()
 {
-
 	$rst_options = get_option(RSTPLN_OPTIONS);
 
 	$rst_paypal_options = get_option(RSTPLN_PPOPTIONS);
@@ -277,12 +280,23 @@ function wp_row_seats_signup_call()
 	$symbol = get_option('rst_currencysymbol');
 	$currency = get_option('rst_currency');
     $symbols = array(
-        "0" => "$",
+	    "0" => "$",
         "1" => "&pound;",
         "2" => "&euro;",
         "3" => "&#3647;",
         "4" => "&#8362;",
-        "5" => "&yen;");
+        "5" => "&yen;",
+        "6" => "&#8377;",
+        "7" => "R$",
+        "8" => "kr",
+        "9" => "zł",
+        "10" => "Ft",
+        "11" => "Kč",
+        "12" => "&#1088;&#1091&#1073;",
+        "13" => "&#164;",
+        "14" => "&#x20B1;",
+        "15" => "Fr",
+        "16" => "RM");
 
     $symbol = $symbols[$symbol];
     //proccess the form offline if there is no active payment modules available 
@@ -298,16 +312,25 @@ function wp_row_seats_signup_call()
 		header ('Content-type: text/html; charset=utf-8');
 		print "<html><body>";
 		$errors = array();
+		$customfield_data= apply_filters('row_seats_custom_field_data',$_REQUEST['parameter']);
 		if(!$_POST['contact_name'])		{
 			$errors['enter_name'] = '<li>'.__($event_enter_name, 'row_seats').'</li>';		}
 		if(!$_POST['contact_email'])
 		{
 			$errors['contact_email'] = '<li>'.__($event_enter_email, 'row_seats').'</li>';
 		}
+if (!filter_var($_POST['contact_email'], FILTER_VALIDATE_EMAIL)) {
+   // echo "This ($email_a) email address is considered valid.";
+	$errors['contact_email'] = '<li>'.__('Please enter a valid email', 'row_seats').'</li>';
+}
+
+		
 		if(!$_POST['contact_phone'])
 		{
 			$errors['contact_phone'] = '<li>'.__($event_enter_phone, 'row_seats').'</li>';
 		}
+$errors= apply_filters('row_seats_custom_field_error',$errors);
+		
 		if(!$_POST['rstterms'])
 		{
 			$errors['rstterms'] = '<li>'.__($event_enter_terms, 'row_seats').'</li>';
@@ -350,13 +373,13 @@ function wp_row_seats_signup_call()
 			if($_POST['payment_method']=="offlinepayment_force")
 			{	
 						$checkout_summary['payment_method'] = array(
-							'title' => __('Payment Gateway', 'wpgc'),
+							'title' => __('Payment Gateway', 'rst'),
 							'value' => 'Offline payment'
 						);							
 			}else{
 
 						$checkout_summary['payment_method'] = array(
-							'title' => __('Payment Gateway', 'wpgc'),
+							'title' => __('Payment Gateway', 'rst'),
 							'value' => apply_filters('row_seats_payment_logo', '', $payment_method)
 						);	
 
@@ -364,9 +387,22 @@ function wp_row_seats_signup_call()
 			}			
 			//Fetching cart products
 			$cartitems = unserialize(base64_decode($_POST['mycartitems']));
+//print "<br><br><br>";
+			//print_r($cartitems);
+			//print "<br><br><br>";
+			
+    $showid = $cartitems[0]['show_id'];
+    $showdata1['vmid'] = $showid;
+    $showdata1 = rst_shows_operations('byid', $showdata1, '');
+
+    $showdata1 = $showdata1[0];
+    $eventname1 = $showdata1['show_name'];
+	$mytseats=array();
+	
 			$subtotal=0; 		
 			for ($i = 0; $i < count($cartitems); $i++) {
-				$name ="Seat:".$cartitems[$i]['row_name'] . $rst_booking[$i]['seatno'];
+				$name ="Seat:".$cartitems[$i]['row_name'] . $cartitems[$i]['seatno'];
+				$mytseats[]=$cartitems[$i]['row_name'] . $cartitems[$i]['seatno'];
 				$price=$cartitems[$i]['price'];
 				if($rst_options['rst_enable_special_pricing']=="on" and row_seats_special_pricing_verification())
 				{
@@ -381,7 +417,7 @@ function wp_row_seats_signup_call()
 											'value' => $symbol.number_format($price, 2, ".", "")
 										);
 			}	
-					
+		$data['event_name_display']=$eventname1." ".implode(",",$mytseats);
 
 			echo '<table class="row_seats__confirmation_table">';
 
@@ -448,7 +484,7 @@ function wp_row_seats_signup_call()
 			echo '
 			<div class="row_seats_signup_buttons">';
 					foreach($buttons as $key => $button) {
-						echo '<input type="button" id="'.$prefix.$key.'" class="row_seats_submit" value="'.esc_attr($button['title']).'" '.(!empty($button['onclick']) ? ' onclick="'.$button['onclick'].'"' : '').'>';
+						echo '&nbsp;&nbsp;<input type="button" id="'.$prefix.$key.'" class="row_seats_submit" value="'.esc_attr($button['title']).'" '.(!empty($button['onclick']) ? ' onclick="'.$button['onclick'].'"' : '').'>';
 					}
 					echo '<img id="'.$prefix.'loading2" class="row_seats_loading" src="'.plugins_url('/images/loading.gif', __FILE__).'" alt=""></div>';
 			
@@ -480,27 +516,67 @@ function registerOptions()
     if ($wpdb->get_var("SHOW TABLES LIKE '$wpdb->rst_booking_seats_relation'") == $wpdb->rst_booking_seats_relation) {
         $sql = "ALTER TABLE " . $wpdb->rst_booking_seats_relation . " ADD COLUMN booking_status varchar(10) NULL";
 
-        mysql_query($sql);
+			$sqlexist="SHOW columns from rst_booking_seats_relation where field='booking_status'";
+			$sqlexist_details = $wpdb->get_results($sqlexist, ARRAY_A);
+			if(count($sqlexist_details)==0)
+			{
+            $sql = "ALTER TABLE " . $wpdb->rst_booking_seats_relation . " ADD COLUMN booking_status varchar(10) NULL";
+            $wpdb->query($sql);
+			}	
+
+			
+		
+        //mysql_query($sql);
+		//$wpdb->query($sql);
 
     }
     if ($wpdb->get_var("SHOW TABLES LIKE '$wpdb->rst_booking_seats_relation'") == $wpdb->rst_booking_seats_relation) {
         $sql = "ALTER TABLE " . $wpdb->rst_booking_seats_relation . " ADD COLUMN date_of_cancel TIMESTAMP  NULL";
 
-        mysql_query($sql);
+			$sqlexist="SHOW columns from rst_booking_seats_relation where field='date_of_cancel'";
+			$sqlexist_details = $wpdb->get_results($sqlexist, ARRAY_A);
+			if(count($sqlexist_details)==0)
+			{
+            $sql = "ALTER TABLE " . $wpdb->rst_booking_seats_relation . " ADD COLUMN date_of_cancel TIMESTAMP  NULL";
+            $wpdb->query($sql);
+			}	
+
+		//$wpdb->query($sql);
 
     }
     if ($wpdb->get_var("SHOW TABLES LIKE '$wpdb->rst_booking_seats_relation'") == $wpdb->rst_booking_seats_relation) {
         $sql = "ALTER TABLE " . $wpdb->rst_booking_seats_relation . " ADD COLUMN b_seatid int(11)  NULL";
-
-        mysql_query($sql);
+		
+		
+			$sqlexist="SHOW columns from rst_booking_seats_relation where field='b_seatid'";
+			$sqlexist_details = $wpdb->get_results($sqlexist, ARRAY_A);
+			if(count($sqlexist_details)==0)
+			{
+            $sql = "ALTER TABLE " . $wpdb->rst_booking_seats_relation . " ADD COLUMN b_seatid int(11)  NULL";
+            $wpdb->query($sql);
+			}
+        //mysql_query($sql);
+		//$wpdb->query($sql);
 
     }
     if ($wpdb->get_var("SHOW TABLES LIKE '$wpdb->rst_booking_seats_relation'") == $wpdb->rst_booking_seats_relation) {
         $sql = "ALTER TABLE " . $wpdb->rst_booking_seats_relation . " ADD COLUMN comments TEXT  NULL";
 
-        mysql_query($sql);
+			$sqlexist="SHOW columns from rst_booking_seats_relation where field='comments '";
+			$sqlexist_details = $wpdb->get_results($sqlexist, ARRAY_A);
+			if(count($sqlexist_details)==0)
+			{
+             $sql = "ALTER TABLE " . $wpdb->rst_booking_seats_relation . " ADD COLUMN comments TEXT  NULL";
+            $wpdb->query($sql);
+			}		
+		
+        //mysql_query($sql);
+		//$wpdb->query($sql);
 
     }
+	$rst_options = get_option(RSTPLN_OPTIONS);
+	
+	
 }
 
 
@@ -524,9 +600,17 @@ function adminMenu()
     add_submenu_page('rst-intro', __('Row Seats Settings', 'menu-test'), __('Row Seats Settings', 'menu-test'), $capability_for_settings, 'rst-settings', 'rst_settings');
 	add_submenu_page('rst-intro', __('Payment Settings', 'menu-test'), __('Payment Settings', 'menu-test'), $capability_for_settings, 'rst-pay-settings', 'rst_pay_settings');
     add_submenu_page('rst-intro', __('Manage Seats', 'menu-test'), __('Manage Seats', 'menu-test'), $capability, 'rst-manage-seats', 'rst_manage_seats');
+	///add_submenu_page('rst-intro', __('Special Price', 'menu-test'), __('Special Price', 'menu-test'), $capability, 'rst-special-price', 'rst_special_price');
 	add_submenu_page('rst-intro', __('Transactions', 'menu-test'), __('Transactions', 'menu-test'), $capability, 'rst-transactions', 'rst_transactions');
-    add_submenu_page('rst-intro', __('Month Calender', 'menu-test'), __('Month Calender', 'menu-test'), $capability, 'rst-manage-seats-moncal', 'rst_manage_seats_moncalender');
-    add_submenu_page('rst-intro', __('Reports', 'menu-test'), __('Reports', 'menu-test'), $capability, 'rst-reports', 'rst_reports');
+    add_submenu_page('rst-intro', __('Add an Event', 'menu-test'), __('Add an Event', 'menu-test'), $capability, 'rst-manage-seats-moncal', 'rst_manage_seats_moncalender');
+	add_submenu_page('rst-intro', __('Reports', 'menu-test'), __('Reports', 'menu-test'), $capability, 'rst-reports', 'rst_reports');
+    //add_submenu_page('rst-intro', __('Wpuser Access', 'menu-test'), __('Wpuser Access', 'menu-test'), $capability, 'wpuser-access', 'wpuser_access');
+	//add_submenu_page('rst-intro', __('Seat color', 'menu-test'), __('Seat color', 'menu-test'), $capability, 'seat-color', 'seat_color');
+	
+		//wp_register_script('jscolor.js', plugin_dir_url(__FILE__) . 'js/jscolor/jscolor.js', array('jquery'));
+		//wp_enqueue_script('jscolor.js');
+
+		
 }
 
 
@@ -536,7 +620,7 @@ function adminMenu()
 function gettheseatchart($showid, $type = '')
 {
 
-global $screenspacing;
+global $screenspacing,$wpdb;
     if ($type == 'offline') {
         $offlineAdmin = 'admin';
     }
@@ -550,6 +634,23 @@ global $screenspacing;
         $type = '';
     }
 
+	
+	
+$rst_options = get_option(RSTPLN_OPTIONS);	
+if($rst_options['rst_idle_time'])	
+{
+$rstidlecounter=$rst_options['rst_idle_time'];
+}else{
+$rstidlecounter=10;
+}
+
+if($rst_options['rst_idle_clear_cart'])	
+{
+$rst_idle_clear_cart=$rst_options['rst_idle_clear_cart'];
+}else{
+$rst_idle_clear_cart=7;
+}		
+	
     $currenturl = curPageURL();
 
     $rst_paypal_options = get_option(RSTPLN_PPOPTIONS);
@@ -561,16 +662,25 @@ global $screenspacing;
 	$event_booking_warning2="prior to engagement";
 	$event_datetime="Event Date & Time";
 	$event_venue="Venue";
-	$event_empty_warning="YOUR CART WILL EMPTY IF IDLE FOR 7MIN.";
+	$event_empty_warning="YOUR CART WILL EMPTY IF IDLE FOR ".$rst_idle_clear_cart."MIN.";
 	$event_view_cart="View Cart";
 	$event_seat_processing="Processing.....";
 	$coupon_apply_memberid="Apply Member ID";
 	$coupon_apply_coupon="Apply Coupon";
 	$coupon_enter_memberid="Enter Member ID";
+	$wpuser_onlyloggedin="Sorry, Only logged in users can access this show.";
+
+
+
+
 
 	
 	if($wplanguagesoptions['rst_enable_languages']=="on")
 	{
+		if($wplanguagesoptions['languages_wpuser_onlyloggedin'])
+		{
+			$wpuser_onlyloggedin=$wplanguagesoptions['languages_wpuser_onlyloggedin'];
+		}	
 		if($wplanguagesoptions['languages_event_name'])
 		{
 			$event_name_title=$wplanguagesoptions['languages_event_name'];
@@ -634,7 +744,7 @@ global $screenspacing;
         $currenturl = $return_page;
     }
 
-    $rst_options = get_option(RSTPLN_OPTIONS);
+    
 
     $stylecss = $rst_options['rst_theme'];
     if ($stylecss == '') {
@@ -679,7 +789,7 @@ global $screenspacing;
     }
 
     ?>
-<!--qwe-->
+<!--Row Seats starts-->
    
     <div style="width: <?php echo $divwidth;?>px; <?php echo $style; ?>">
     <script type="text/javascript">
@@ -727,13 +837,17 @@ ul.r li {
 
 </style> 
 
+<?php
+apply_filters('row_seats_color_selection_css',$showid['id']);
+?>
+
     <script type='text/javascript' src='<?php echo RSTPLN_COKURL ?>jquery.cookie.js'></script>
-    <script type="text/javascript" src="<?php echo RSTPLN_IDLKURL ?>jquery.countdown.js"></script>
-    <script type="text/javascript" src="<?php echo RSTPLN_IDLKURL ?>idle-timer.js"></script>
+   <!-- <script type="text/javascript" src="<?php echo RSTPLN_IDLKURL ?>jquery.countdown.js"></script>
+    <script type="text/javascript" src="<?php echo RSTPLN_IDLKURL ?>idle-timer.js"></script>-->
  <?
 wp_enqueue_script('jquery');
 ?> 
-    <link rel="stylesheet" type="text/css" media="all" href="<?php echo RSTPLN_IDLKURL ?>jquery.countdown.css"/>
+    <!--<link rel="stylesheet" type="text/css" media="all" href="<?php echo RSTPLN_IDLKURL ?>jquery.countdown.css"/>-->
 
     <input type="hidden" name="startedcheckout" id="startedcheckout" value=""/>
     <input type="hidden" name="numberoffreecoupons" id="numberoffreecoupons" value=""/>
@@ -749,6 +863,7 @@ wp_enqueue_script('jquery');
     }
     $showdata = $showdata[0];
     $eventname = $showdata['show_name'];
+	$_SESSION['views']=  $showdata['id'];
     $venue = $showdata['venue'];
     $eventdate = $showdata['show_start_time'];
     $eventdate = date('Y-m-d H:i:s', strtotime($showdata['show_start_time']));
@@ -774,8 +889,37 @@ wp_enqueue_script('jquery');
     }
     $currenttime = current_time('mysql', 0);
 
+	
+$vairablename="row_seats_wpuser_access_".$showdata['id'];
+$vairablenamevalue=$rst_options[$vairablename];
+//if($vairablenamevalue=="on")
+//{	
+	
 	//if ($currentdate >= $eventdate1 && $type != 'offline') {
-    if ($currentdate >= $eventdate1) {
+	if($_REQUEST['stoprefresh']=="yes")
+	{
+	
+if($rst_options['rst_idle_message'])	
+{
+$rstidlemsg=$rst_options['rst_idle_message'];
+}else{
+$rstidlemsg='{showname} : Sorry this page is idle for long. To continue <a href="{returnurl}">click here</a>';
+}
+$tags = array('{showname}', '{showdate}', '{returnurl}');
+$vals = array($eventname, $eventdate, $_REQUEST['returnurl']);
+$rstidlemsg = str_replace($tags, $vals, $rstidlemsg);
+$rstidlemsg = stripslashes($rstidlemsg);
+echo '<div><br/><strong>'.$rstidlemsg.'</strong></div></div><br>';
+	} elseif(!is_user_logged_in() && $vairablenamevalue=="on")
+	{
+	
+	echo   '<div><br/><strong>'.$wpuser_onlyloggedin.'</strong></div></div>';
+	
+	
+	}
+	
+	
+	  elseif ($currentdate >= $eventdate1) {
 
         echo   '<div><br/><strong>'.$event_booking_closed.'</strong></div></div>';
 
@@ -790,7 +934,7 @@ wp_enqueue_script('jquery');
         <div style='float:left;color:#f21313;'>$event_empty_warning &nbsp;&nbsp;</div>
 
         <div id='defaultCountdown' ></div>
-
+        <div id='idleCountdown' style='display: none;'></div>
         </div><div id='eventdetails' >
 
         $event_name_title:$eventname <br/>
@@ -802,18 +946,53 @@ wp_enqueue_script('jquery');
 
         </div></div></div>";
         // <----- showcart
-
+		apply_filters('row_seats_generel_admission_form',$showid);
         $html .= "<div id='showprview' class='localcss' align='center' style='width:100%; margin-left: auto;margin-right: auto;' >";
 
+		
+	
         ?>
         
         <script>
 	
         var regtype = '<?php echo $type?>';
         var offlineAdmin = '<?php echo $offlineAdmin?>';
+		var rstidlecounter = '<?php echo $rstidlecounter?>';
 
         ///////////////////////// idle time code /////////////////
+		
+function addQueryParam( url, key, val ){
+    var parts = url.match(/([^?#]+)(\?[^#]*)?(\#.*)?/);
+    var url = parts[1];
+    var qs = parts[2] || '';
+    var hash = parts[3] || '';
 
+    if ( !qs ) {
+        return url + '?' + key + '=' + encodeURIComponent( val ) + hash;
+    } else {
+        var qs_parts = qs.substr(1).split("&");
+        var i;
+        for (i=0;i<qs_parts.length;i++) {
+            var qs_pair = qs_parts[i].split("=");
+            if ( qs_pair[0] == key ){
+                qs_parts[ i ] = key + '=' + encodeURIComponent( val );
+                break;
+            }
+        }
+        if ( i == qs_parts.length ){
+            qs_parts.push( key + '=' + encodeURIComponent( val ) );
+        }
+        return url + '?' + qs_parts.join('&') + hash;
+    }
+}
+
+		
+        function idleforlong() {
+		var newurl=addQueryParam( window.location.href, 'stoprefresh', 'yes' );
+		var newurl=addQueryParam( newurl, 'returnurl', window.location.href );
+		window.location.href=newurl;
+		//alert(newurl);
+		}
         function liftOff() {
 
             jQuery.post("<?php echo RSTAJAXURL?>",
@@ -842,7 +1021,7 @@ wp_enqueue_script('jquery');
 
                                 id = jQuery(this).attr("id");
 
-                                jConfirm('<?php echo $rst_h_msg;?>', 'HandiCap Confirmation', function (r) {
+                                jConfirm('<?php echo $rst_h_msg;?>', 'Wheelchair Access', function (r) {
                                     if (r == true) {
                                         getupdatedshow(id);
                                     }
@@ -855,7 +1034,98 @@ wp_enqueue_script('jquery');
                 });
         }
 
+		
+<?php
+$rstidlecounter=$rstidlecounter*60;
+$rst_idle_clear_cart=$rst_idle_clear_cart*60;
+
+?>
+var IDLE_TIMEOUT = <?php echo $rstidlecounter;?>; //seconds
+var IDLE_TIMEOUT2 = <?php echo $rst_idle_clear_cart;?>; //seconds
+var _idleSecondsCounter = 0;
+var _idleSecondsCounter2 = 0;
+document.onclick = function() {
+    _idleSecondsCounter = 0;
+	_idleSecondsCounter2 = 0;
+};
+document.onmousemove = function() {
+    _idleSecondsCounter = 0;
+	_idleSecondsCounter2 = 0;
+};
+document.onkeypress = function() {
+    _idleSecondsCounter = 0;
+	_idleSecondsCounter2 = 0;
+};
+window.setInterval(CheckIdleTime, 1000);
+
+function CheckIdleTime() {
+    _idleSecondsCounter++;
+	 _idleSecondsCounter2++;
+	 
+    var austDay = new Date();
+    jQuery.cookie("rst_cart_time_<?php echo $showid?>", austDay.getTime());
+
+    var oPanel = document.getElementById("idleCountdown");
+	var mytime=(IDLE_TIMEOUT - _idleSecondsCounter);
+	var minutes = Math.floor(mytime / 60);
+	var seconds = mytime - minutes * 60;	
+	var minutes = ("0" + minutes).slice(-2);
+	var seconds = ("0" + seconds).slice(-2);
+	var oPanel2 = document.getElementById("defaultCountdown");
+	var mytime2=(IDLE_TIMEOUT2 - _idleSecondsCounter2);
+	var minutes2 = Math.floor(mytime2 / 60);
+	var seconds2 = mytime2 - minutes2 * 60;	
+	var minutes2 = ("0" + minutes2).slice(-2);
+	var seconds2 = ("0" + seconds2).slice(-2);	
+
+    if (_idleSecondsCounter2 == IDLE_TIMEOUT2) {
+		_idleSecondsCounter2=0;
+		//oPanel2.innerHTML = "00:00";
+		oPanel2.innerHTML = "<blink><font color=red class=blink><b>Clearing cart....</b></font></blink>";
+        liftOff();
+		
+
+    }
+	else
+	{
+	
+	if((IDLE_TIMEOUT2-_idleSecondsCounter2)<30)
+	{
+	oPanel2.innerHTML = "<blink><font color=red class=blink><b>"+minutes2 +":"+seconds2+"</b></font></blink>";
+	}else {	
+	oPanel2.innerHTML = minutes2 +":"+seconds2;
+	}
+	}		
+	
+    if (_idleSecondsCounter == IDLE_TIMEOUT) {
+        //alert("Time expired!");
+		oPanel.innerHTML = "00:00";
+		clearInterval(CheckIdleTime);
+        idleforlong();
+		return false;
+		//exit;
+    }
+	else
+	{
+
+	oPanel.innerHTML = minutes +":"+seconds;
+
+	}
+	
+
+	
+	
+	
+	
+	
+}
+
+/*		
+		
+		
         IdleTimer.subscribe("idle", function () {
+		
+		  // alert('idle');
 
             var status = document.getElementById("status");
 
@@ -868,6 +1138,17 @@ wp_enqueue_script('jquery');
             jQuery('#defaultCountdown').countdown({until: austDay, onExpiry: liftOff, format: 'MS', compact: true,
 
                 description: ''});
+				
+            jQuery('#idleCountdown').countdown('destroy');
+
+            var austDay1 = new Date();
+
+            austDay1.setMinutes(austDay1.getMinutes() + <?php echo $rstidlecounter?>);
+
+            jQuery('#idleCountdown').countdown({until: austDay1, onExpiry: idleforlong, format: 'MS', compact: true,
+
+                description: ''});
+				
 
         });
 
@@ -889,10 +1170,24 @@ wp_enqueue_script('jquery');
                 description: ''});
 
             jQuery('#defaultCountdown').countdown('pause');
+			
+			var austDay1 = new Date();
+			
+            jQuery('#idleCountdown').countdown('destroy');
+
+            austDay1.setMinutes(austDay1.getMinutes() + <?php echo $rstidlecounter?>);
+
+            jQuery('#idleCountdown').countdown({until: austDay1, onExpiry: idleforlong, format: 'MS', compact: true,
+
+                description: ''});
+
+            jQuery('#idleCountdown').countdown('pause');			
 
         });
 
         IdleTimer.start(1000);
+		
+*/		
         ///////////////////////// idle time code ended /////////////////
 
         function getupdatedshow(id) {
@@ -956,7 +1251,7 @@ wp_enqueue_script('jquery');
 
                                 id = jQuery(this).attr("id");
 
-                                jConfirm('<?php echo $rst_h_msg;?>', 'HandiCap Confirmation', function (r) {
+                                jConfirm('<?php echo $rst_h_msg;?>', 'Wheelchair Access', function (r) {
 
                                     if (r == true) {
                                         getupdatedshow(id);
@@ -970,6 +1265,82 @@ wp_enqueue_script('jquery');
                 });
         }
 
+		
+		
+        function getupdatedshow(id) {
+
+            if (jQuery.cookie("rst_cart_time_<?php echo $showid?>") == null) {
+
+                var dat = new Date();
+
+                jQuery.cookie("rst_cart_time_<?php echo $showid?>", dat.getTime());
+
+            } else {
+
+                var dat = new Date();
+
+                diff = dat.getTime() - jQuery.cookie("rst_cart_time_<?php echo $showid?>");
+
+                if (diff > 600000) {
+                    jQuery.cookie("rst_cart_<?php echo $showid?>", null);
+                }
+
+            }
+
+            jQuery('#showprview').block({
+
+                message: '<?php echo $event_seat_processing;?>',
+                css: { border: '3px solid #a00' }
+
+            });
+
+            jQuery.post("<?php echo RSTAJAXURL?>",
+                {
+                    action: 'booking',
+                    details: id,
+                    redirecturl: document.getElementById('redirecturl').value,
+                    cartiterms: jQuery.cookie("rst_cart_<?php echo $showid?>"),
+                    offline: (regtype == 'offline') ? 'offline' : ''
+                },
+
+                function (msg) {
+
+                    jQuery("#showprview").html((msg));
+
+                    jQuery('#showprview').unblock();
+
+                    document.getElementById('return').value = document.getElementById('redirecturl').value;
+
+                    jQuery(".seatplan .showseats").each(function (i) {
+
+                        if (jQuery(this).attr("rel") == "Y") {
+
+                            // seat onclick ----->
+                            jQuery(this).click(function () {
+                                getupdatedshow(jQuery(this).attr("id"));
+                            });
+                            // <----- seat onclick
+                        }
+
+                        if (jQuery(this).attr("rel") == "H") {
+
+                            jQuery(this).click(function () {
+
+                                id = jQuery(this).attr("id");
+
+                                jConfirm('<?php echo $rst_h_msg;?>', 'Wheelchair Access', function (r) {
+
+                                    if (r == true) {
+                                        getupdatedshow(id);
+                                    }
+                                    else {
+                                    }
+                                });
+                            });
+                        }
+                    });
+                });
+        }		
         function refreshshow(id) {
 
             jQuery.post('<?php echo RSTAJAXURL?>',
@@ -1007,7 +1378,7 @@ wp_enqueue_script('jquery');
 
                                 id = jQuery(this).attr("id");
 
-                                jConfirm('<?php echo $rst_h_msg;?>', 'HandiCap Confirmation', function (r) {
+                                jConfirm('<?php echo $rst_h_msg;?>', 'Wheelchair Access', function (r) {
 
                                     if (r == true) {
                                         getupdatedshow(id);
@@ -1020,10 +1391,22 @@ wp_enqueue_script('jquery');
                     });
                 });
         }
+<?php
+if($rst_options['rst_refresh_time'])
+{
+$refresh_time=(int)$rst_options['rst_refresh_time']*1000;
+if($refresh_time<=0)
+{
+$refresh_time=5000;
+}
+} else {
+$refresh_time=5000;
+}
 
+?>
         jQuery(document).ready(function () {
             getupdatedshow("<?php echo $showid?>");
-            var interval = setInterval(increment, 5000);
+            var interval = setInterval(increment, <?php echo $refresh_time?>);
         });
 
         function releaseseats() {
@@ -1051,7 +1434,7 @@ wp_enqueue_script('jquery');
                     } else {
                         jQuery.cookie("rst_cart_<?php echo $showid?>", null);
                         window.location.reload();
-                        exit();
+                        //exit();
                     }
                 });
 
@@ -1566,7 +1949,7 @@ return;
 
                                 id = jQuery(this).attr("id");
 
-                                jConfirm('<?php echo $rst_h_msg;?>', 'HandiCap Confirmation', function (r) {
+                                jConfirm('<?php echo $rst_h_msg;?>', 'Wheelchair Access', function (r) {
 
                                     if (r == true) {
                                         getupdatedshow(id);
@@ -1613,7 +1996,7 @@ return;
 
                                 id = jQuery(this).attr("id");
 
-                                jConfirm('<?php echo $rst_h_msg;?>', 'HandiCap Confirmation', function (r) {
+                                jConfirm('<?php echo $rst_h_msg;?>', 'Wheelchair Access', function (r) {
 
                                     if (r == true) {
                                         getupdatedshow(id);
@@ -1686,12 +2069,14 @@ function rst_shows_operations($action, $data, $currentcart)
                 $row = $currentcart[$i]['row_name'];
                 $showid = $currentcart[$i]['show_id'];
                 $seat = $currentcart[$i]['seatno'];
+				if($seat && $showid && $row)
+				{
                 $sql = "SELECT * FROM $wpdb->rst_seats st,$wpdb->rst_shows sh
                     WHERE
                     sh.id=st.show_id AND
                     st.row_name = '$row' AND
                     seattype<>'' AND
-                    seatno = $seat AND
+                    seatno = '$seat' AND
                     sh.id =" . $showid;
                 $found = 0;
                 $data = Array();
@@ -1711,7 +2096,7 @@ function rst_shows_operations($action, $data, $currentcart)
                             $dicount = $data['seat_price'];
                             $originaltype = $data['originaltype'];
 
-                            $sql = "UPDATE  $wpdb->rst_seats SET seattype='$originaltype',discount_price=$dicount,status='not blocked' WHERE show_id=" . $showid . " AND row_name='$row' AND seattype<>'' AND seatno=" . $seat;
+                            $sql = "UPDATE  $wpdb->rst_seats SET seattype='$originaltype',discount_price=$dicount,status='not blocked' WHERE show_id=" . $showid . " AND row_name='$row' AND seattype<>'' AND seatno='".$seat."'";
 
                             $wpdb->query($sql);
 
@@ -1720,6 +2105,7 @@ function rst_shows_operations($action, $data, $currentcart)
                         }
                     }
                 }
+				}
 
             }
             return array();
@@ -1812,16 +2198,33 @@ function rst_shows_operations($action, $data, $currentcart)
             } else {
                 $papalmode = 'Live';
             }
+			
+			if ( is_user_logged_in() ) {
+				global $current_user;
+				get_currentuserinfo();
+				$user_id=$current_user->ID;				
+			
+			} else {			
+				$user_id=0;
+			}
+
+			
             if($data['bookingid'])
 	    {
-	    $wpdb->query("UPDATE  $wpdb->rst_bookings SET rst_session_id='$rst_session_id',paypal_vars='$paypal_vars',booking_time=booking_time,payment_status='$status',name='$username',email='$useremail',phone=$phone,paypal_mode=$papalmode WHERE booking_id=" . $data['bookingid']);
+	    $wpdb->query("UPDATE  $wpdb->rst_bookings SET rst_session_id='$rst_session_id',paypal_vars='$paypal_vars',booking_time=booking_time,payment_status='$status',name='$username',email='$useremail',phone=$phone,paypal_mode=$papalmode,user_id=$user_id WHERE booking_id=" . $data['bookingid']);
+		$customfield_query= apply_filters('row_seats_custom_field_query',$data['bookingid']);
+		$_SESSION['mybookingsess']= $data['bookingid'];
+		setcookie("mybookingsesscook", $data['bookingid'], time()+900); 
 	    return $data['bookingid'];
 	    }else{
-            $sql = "INSERT INTO $wpdb->rst_bookings (show_id,rst_session_id,paypal_vars,booking_time,booking_details,payment_status,name,email,phone,paypal_mode,ticket_no)
-            VALUES ($showid, '$rst_session_id', '$paypal_vars',now(),'$booking_detail','$status','$username','$useremail','$phone','$papalmode','')";
+            $sql = "INSERT INTO $wpdb->rst_bookings (show_id,rst_session_id,paypal_vars,booking_time,booking_details,payment_status,name,email,phone,paypal_mode,ticket_no,user_id)
+            VALUES ($showid, '$rst_session_id', '$paypal_vars',now(),'$booking_detail','$status','$username','$useremail','$phone','$papalmode','','$user_id')";
             // ,rst_session_id,paypal_vars,booking_time,booking_details,payment_status,name,email,phone
-            $wpdb->query($sql);
-            return mysql_insert_id();
+            $wpdb->query($sql);			
+			$customfield_query= apply_filters('row_seats_custom_field_query',$wpdb->insert_id);
+			$_SESSION['mybookingsess']= $wpdb->insert_id;
+			setcookie("mybookingsesscook", $wpdb->insert_id, time()+900); 
+            return $wpdb->insert_id;
 	    }
 
             break;
@@ -1832,11 +2235,13 @@ function rst_shows_operations($action, $data, $currentcart)
                 $seatno = $data[$row]['seatno'];
                 $showid = $data[$row]['show_id'];
                 $rowname = $data[$row]['row_name'];
+				if($seatno && $showid && $rowname)
+				{				
                 $sql = "SELECT * FROM $wpdb->rst_seats st,$wpdb->rst_shows sh
                     WHERE
                     sh.id=st.show_id AND
                     st.row_name = '$rowname' AND
-                    st.seatno = $seatno AND
+                    st.seatno = '$seatno' AND
                     st.seattype <> '' AND
                     sh.id =" . $showid;
 
@@ -1847,6 +2252,7 @@ function rst_shows_operations($action, $data, $currentcart)
                     $wpdb->query("UPDATE  $wpdb->rst_seats SET seattype='$seattype',status='not blocked' WHERE seatid=" . $seatid);
 
                 }
+				}
 
             }
             return $showid;
@@ -1864,13 +2270,14 @@ function rst_shows_operations($action, $data, $currentcart)
             $bookings['show_id'] = $showid;
             $bookings['row_name'] = $row;
             $bookings['seatno'] = $seat;
-
+				if($seat && $showid && $row)
+				{
             $sql = "SELECT * FROM $wpdb->rst_seats st,$wpdb->rst_shows sh
                     WHERE
                     sh.id=st.show_id AND
                     st.row_name = '$row' AND
                     seattype<>'' AND
-                    seatno = $seat AND
+                    seatno = '$seat' AND
                     sh.id =" . $showid;
             $found = 0;
             $data = Array();
@@ -1890,7 +2297,7 @@ function rst_shows_operations($action, $data, $currentcart)
                         $dicount = $data['seat_price'];
                         $originaltype = $data['originaltype'];
 
-                        $sql = "UPDATE  $wpdb->rst_seats SET seattype='$originaltype',discount_price=$dicount,status='not blocked' WHERE show_id=" . $showid . " AND row_name='$row' AND seattype<>'' AND seatno=" . $seat;
+                        $sql = "UPDATE  $wpdb->rst_seats SET seattype='$originaltype',discount_price=$dicount,status='not blocked' WHERE show_id=" . $showid . " AND row_name='$row' AND seattype<>'' AND seatno='".$seat."'";
 
                         $wpdb->query($sql);
 
@@ -1901,6 +2308,7 @@ function rst_shows_operations($action, $data, $currentcart)
                 }
 
             }
+			}
 
             break;
 
@@ -1923,9 +2331,10 @@ function rst_shows_operations($action, $data, $currentcart)
                     WHERE
                     sh.id=st.show_id AND
                     st.row_name = '$row' AND
-                    seattype<>'' AND
-                    seatno = $seat AND
+                    seattype!='' AND seattype!='T' AND seattype!='B' AND
+                    seatno = '$seat' AND
                     sh.id =" . $showid;
+					//print $sql;
             $found = 0;
             $data = Array();
             if ($results = $wpdb->get_results($sql, ARRAY_A)) {
@@ -1951,7 +2360,7 @@ function rst_shows_operations($action, $data, $currentcart)
 
                         $dicount = $data['seat_price'];
                         $bookings['price'] = $dicount;
-                        $sql = "UPDATE  $wpdb->rst_seats SET seattype='T',status='blocked',blocked_time=now() WHERE show_id=" . $showid . " AND row_name='$row' AND seattype<>'' AND seatno=" . $seat;
+                        $sql = "UPDATE  $wpdb->rst_seats SET seattype='T',status='blocked',blocked_time=now() WHERE show_id=" . $showid . " AND row_name='$row' AND seattype<>'' AND seatno='".$seat."'";
 
                         $wpdb->query($sql);
 
@@ -1968,7 +2377,7 @@ function rst_shows_operations($action, $data, $currentcart)
                             $dicount = $data['seat_price'];
                         }
                         $bookings['price'] = $dicount;
-                        $sql = "UPDATE  $wpdb->rst_seats SET seattype='T',discount_price=$dicount,status='blocked',blocked_time=now() WHERE show_id=" . $showid . " AND row_name='$row' AND seattype<>'' AND seatno=" . $seat;
+                        $sql = "UPDATE  $wpdb->rst_seats SET seattype='T',discount_price=$dicount,status='blocked',blocked_time=now() WHERE show_id=" . $showid . " AND row_name='$row' AND seattype<>'' AND seatno='".$seat."'";
 
                         $wpdb->query($sql);
                         $finalbookings[] = $bookings;
@@ -2242,6 +2651,8 @@ function rst_ajax_callback()
                 }
 
                 $currentcart = $_POST['cartiterms'];
+				
+
                 $bookings = rst_shows_operations('booking', $_POST, $currentcart);
                 $cartplusbooking = rst_shows_set_session($bookings, 'add', $currentcart);
 
@@ -2252,6 +2663,7 @@ function rst_ajax_callback()
 
             case 'save': // {
                 echo rst_shows_operations('insert', $_POST, '');
+				
                 exit();
 
                 break;
@@ -2329,10 +2741,10 @@ global $screenspacing;
 
 	$wplanguagesoptions = get_option(RSTLANGUAGES_OPTIONS);
 	$event_seat="Seat";
-	$event_price="Price1";
+	$event_price="Price-";
 	$event_seat_available="Available";
 	$event_seat_booked="Booked";
-	$event_seat_handicap="Handicap Accomodation";
+	$event_seat_handicap="Wheelchair Access";
 	$event_stall="STALL";
 	$event_balcony="BALCONY";
 	$event_circle="CIRCLE";
@@ -2387,11 +2799,22 @@ global $screenspacing;
 $symbol = get_option('rst_currencysymbol');
     $symbols = array(
         "0" => "$",
-        "1" => "&pound;",
+		"1" => "&pound;",
         "2" => "&euro;",
         "3" => "&#3647;",
         "4" => "&#8362;",
-        "5" => "&yen;");
+        "5" => "&yen;",
+        "6" => "&#8377;",
+        "7" => "R$",
+        "8" => "kr",
+        "9" => "zł",
+        "10" => "Ft",
+        "11" => "Kč",
+        "12" => "&#1088;&#1091&#1073;",
+        "13" => "&#164;",
+        "14" => "&#x20B1;",
+        "15" => "Fr",
+        "16" => "RM");
 
     $symbol = $symbols[$symbol];
 
@@ -2409,6 +2832,11 @@ $symbol = get_option('rst_currencysymbol');
     $divwidth = (($seats[0]['total_seats_per_row']) + 2) * 24;
      $divwidth=$divwidth * $rst_options['rst_zoom'];
 
+    $mindivwidth = 640;
+    if ($divwidth < $mindivwidth) {
+        $divwidth = $mindivwidth;
+    }	 
+	 
     $showname = $data[0]['show_name'];
 
     $rst_bookings = $currentcart;
@@ -2555,13 +2983,18 @@ $circle[$nofsets+$z]=$event_circle[$z];
 
         $otherscart = false;
 
+
+		$cssclassname="notbooked";
+		$cssclassname=apply_filters('row_seats_color_selection_css_name',$cssclassname,$data['seatcolor']);
+		
+		
         if ($data['seattype'] == 'N') {
 
             $html .= '<li class="un showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$event_seat.' ' . $rowname . ($seatno) . ' Unavailable" rel="' . $data['seattype'] . '"></li>';
 
         } else if ($data['seattype'] == 'Y') {
 
-            $html .= '<li class="notbooked showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$event_seat.' ' . $rowname . ($seatno) . ' '.$event_price.' ' . $symbol . $seatcost . ' '.$event_seat_available.'" rel="' . $data['seattype'] . '">' . ($seatno) . '</li>';
+            $html .= '<li class="'.$cssclassname.' showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$event_seat.' ' . $rowname . ($seatno) . ' '.$event_price.' ' . $symbol . $seatcost . ' '.$event_seat_available.'" rel="' . $data['seattype'] . '">' . ($seatno) . '</li>';
 
         } else if ($data['seattype'] == 'H') {
 
@@ -2616,7 +3049,7 @@ $circle[$nofsets+$z]=$event_circle[$z];
     }
 
     $html .= '<li class="ltr">' . $nextrow . '</li></ul></div>';
-
+$html = apply_filters('row_seats_generel_admission_block_seatchart', $html);
     return $html;
 
 }
@@ -2722,9 +3155,15 @@ function rst_seats_operations($action, $finalseats, $showid)
                     if ($seattype != '') {
                         $seatno++;
                     }
+                    //Code added for custom seat number -start
+                    $customseatupdated = apply_filters('row_seats_custom_seat_number', array($seattype, $seatno));
+					$cusseatnumber=$customseatupdated[1];
+					$seattype=$customseatupdated[0];
+					//Code added for custom seat number -end
 
+					
                     $sql = "INSERT INTO $wpdb->rst_seats (show_id,row_name,total_seats_per_row,seatno,seattype,originaltype,seat_price,discount_price,status,created_date,mod_date,mod_by)
-                    VALUES ($showid, '$name', '$total_seats_per_row',$seatno,'$seattype','$seattype',$seat_price,$discount_price,'not blocked','$curdate','$curdate','$modby')";
+                    VALUES ($showid, '$name', '$total_seats_per_row','$cusseatnumber','$seattype','$seattype',$seat_price,$discount_price,'not blocked','$curdate','$curdate','$modby')";
 
                     $wpdb->query($sql);
                 }
@@ -2861,15 +3300,30 @@ function rst_seats_operations($action, $finalseats, $showid)
 function gettheseatchartAjax($showid, $currenturl, $bookings, $offline = '')
 {
 
-global $screenspacing;
+global $screenspacing,$wpdb;
 
+			if ( is_user_logged_in() ) {
+				global $current_user;
+				get_currentuserinfo();
+				$user_name=$current_user->user_firstname.' '.$current_user->user_lastname;	
+				$user_email=$current_user->user_email;	
+				$user_phone=$current_user->phone;					
+			
+			} else {			
+				$user_name='';	
+				$user_email='';	
+				$user_phone='';				
+			}	  
+
+
+	  
 	$wplanguagesoptions = get_option(RSTLANGUAGES_OPTIONS);
 
 	$event_seat_available="Available";
 	$event_seat_inyourcart="In Your Cart";
 	$event_seat_inotherscart="In Other&#39;s Cart";
 	$event_seat_booked="Booked";
-	$event_seat_handicap="Handicap Accomodation";
+	$event_seat_handicap="Wheelchair Access";
 	$event_itemsincart="Items in Cart";
     $event_item_cost="Cost";
 	$event_item_total="Total";
@@ -2877,7 +3331,7 @@ global $screenspacing;
 	$event_item_checkout="Checkout";
 	$event_item_clearcart="Clear Cart";
 	$event_bookingdetails="Booking Details ";
-	$event_customer_name="Name";
+	$event_customer_name="First Name & Last Name";
 	$event_customer_email="Email";
 	$event_customer_phone="Phone";
 	$event_terms="I Agree Terms & Conditions";
@@ -3031,11 +3485,22 @@ global $screenspacing;
 
     $symbols = array(
         "0" => "$",
-        "1" => "&pound;",
+		"1" => "&pound;",
         "2" => "&euro;",
         "3" => "&#3647;",
         "4" => "&#8362;",
-        "5" => "&yen;");
+        "5" => "&yen;",
+        "6" => "&#8377;",
+        "7" => "R$",
+        "8" => "kr",
+        "9" => "zł",
+        "10" => "Ft",
+        "11" => "Kč",
+        "12" => "&#1088;&#1091&#1073;",
+        "13" => "&#164;",
+        "14" => "&#x20B1;",
+        "15" => "Fr",
+        "16" => "RM");
 
     $symbol = $symbols[$symbol];
 
@@ -3067,7 +3532,10 @@ global $screenspacing;
             jQuery(".QTPopup").css('display', 'none')
 
             jQuery(".contact").click(function () {
-
+<?php
+apply_filters('row_seats_seat_restriction_js_filter','');
+?>
+			
                 document.getElementById('startedcheckout').value = "yes";
 
                 jQuery(".QTPopup").animate({width: 'show'}, 'slow');
@@ -3116,11 +3584,22 @@ global $screenspacing;
 
     $symbols = array(
         "0" => "$",
-        "1" => "&pound;",
+		"1" => "&pound;",
         "2" => "&euro;",
         "3" => "&#3647;",
         "4" => "&#8362;",
-        "5" => "&yen;");
+        "5" => "&yen;",
+        "6" => "&#8377;",
+        "7" => "R$",
+        "8" => "kr",
+        "9" => "zł",
+        "10" => "Ft",
+        "11" => "Kč",
+        "12" => "&#1088;&#1091&#1073;",
+        "13" => "&#164;",
+        "14" => "&#x20B1;",
+        "15" => "Fr",
+        "16" => "RM");
 
     $symbol = $symbols[$symbol];
 
@@ -3141,7 +3620,7 @@ global $screenspacing;
 
     <div class="popupGrayBg"></div>
 
-    <div class="QTPopupCntnr" style="width: 850px;">
+    <div id='elem'  class="QTPopupCntnr"   style="width: 750px; <?php echo apply_filters('row_seats_generel_admission_popupfix',$showid);?>">
 
     <div class="gpBdrLeftTop"></div>
 
@@ -3227,36 +3706,28 @@ function updateprice()
             $total = 0;
 
             $totalseats = 0;
-	    $totalspecialpricing=$rst_options['rst_special_pricing_count']+1;
+				if($rst_options['rst_enable_special_pricing']=="on" and row_seats_special_pricing_verification())
+				{				
+		$rst_options['rst_special_pricing_count']=row_seats_special_number_of_special_price($_SESSION['views']);
+		$totalspecialpricing=$rst_options['rst_special_pricing_count']+1;
 	    if(!$rst_options['rst_special_pricing_count'])
 	    $totalspecialpricing=1;
+		}
 
-            for ($i = 0; $i < count($rst_bookings); $i++) {
+           for ($i = 0; $i < count($rst_bookings); $i++) 
+{
 
                 $rst_booking = $rst_bookings[$i];
 				//creating special price dropdown
 				if($rst_options['rst_enable_special_pricing']=="on" and row_seats_special_pricing_verification())
 				{			
-					$special_pricing_array=array();
 					for($j=1;$j<$totalspecialpricing;$j++){
-						if($rst_options['rst_special_pricing_title'.$j] && $rst_options['rst_special_pricing_price'.$j])
-						{
-							$flat_rate=$rst_options['rst_special_pricing_flat_rate'.$j];
-							$finalprice=$rst_options['rst_special_pricing_price'.$j];
-							if($flat_rate=="on")
-							{
-								$finalprice=$finalprice;
-							}else{
-								$finalprice=$rst_booking['price']-($rst_booking['price']*($finalprice/100));
-							}
-							$finalprice = number_format($finalprice, 2, '.', '');
-							$special_pricing_array[$rst_options['rst_special_pricing_title'.$j]]=$finalprice;
-						}
-					}
-				}
-								
+						$special_pricing_array=array();
+						$special_pricing_array=row_seats_special_special_price_array($_SESSION['views'],$rst_booking['price']);
+					}	
+				}	
 
-								?>
+		?>
 
 
                 <tr>
@@ -3271,16 +3742,16 @@ function updateprice()
 					?>					
 					<select name="special_pricing<?php echo $i;?>" id="special_pricing<?php echo $i;?>" onchange="updateprice();">		
 					<option value="normal#<?php echo $rst_booking['price'];?>">Normal</option>
-					<?php
+								<?php
 					foreach($special_pricing_array as $key=>$value){
 					print "<option value='".$key."#".$value."'>".$key."           ".$symbol.$value."</option>";
 					}
-					?>				
+					?>		
 					</select>
 
 					<?php
 					}
-					?>					
+					?>						
 					</td></tr></table></td>
                 </tr>
 
@@ -3369,27 +3840,49 @@ function updateprice()
 
    
         <table>
+        
+        <?php 
+			$row='Before Name';
+			$contact_field = apply_filters('row_seats_custom_fieldname',$row);
+			?>	
             <tr>
                 <td colspan='2'><label for='contact-name'><span class='reqa'>*</span> <?php echo $event_customer_name;?>:</label>
 
                     <input type='text' id='contact_name' class='contact-input' name='contact_name'
-                           value=''/></td>
+                           value='<?php echo $user_name;?>'/></td>
             </tr>
 
+ <?php 
+			$row='After Name';
+			$contact_field = apply_filters('row_seats_custom_fieldname',$row);
+			 
+			$row='Before Email';
+			$contact_field = apply_filters('row_seats_custom_fieldname',$row);
+			?>	
             <tr>
                 <td colspan='2'><label for='contact-email'><span class='reqa'>*</span> <?php echo $event_customer_email;?>:</label>
 
                     <input type='text' id='contact_email' class='contact-input' name='contact_email'
-                           value=''/></td>
+                           value='<?php echo $user_email;?>'/></td>
             </tr>
+          <?php 
+			$row='After Email';
+			$contact_field = apply_filters('row_seats_custom_fieldname',$row);
+			 
+			$row='Before Phone';
+			$contact_field = apply_filters('row_seats_custom_fieldname',$row);
+			?>	
 
             <tr>
                 <td colspan='2'><label for='contact-email'><span class='reqa'>*</span> <?php echo $event_customer_phone;?>:</label>
 
                     <input type='text' id='contact_phone' class='contact-input' name='contact_phone'
-                           value=''/></td>
+                           value='<?php echo $user_phone;?>'/></td>
             </tr>
-
+             <?php 
+			$row='After Phone';
+			$contact_field = apply_filters('row_seats_custom_fieldname',$row);
+			?>	
             <tr>
                 <td colspan='2'>
                     <div><input type='checkbox' id='rstterms' class='contact-input' name='rstterms'/>
@@ -3482,7 +3975,7 @@ $payment_methods = apply_filters('row_seats_currency_payment_methods', $active_p
 
 				$form .= '
 
-				<div class="wpgc_form_row">';
+				<div class="rst_form_row">';
 
 				$checked = ' checked="checked"';
 
@@ -3619,25 +4112,41 @@ $payment_methods = apply_filters('row_seats_currency_payment_methods', $active_p
 
     $divwidth = (($seats[0]['total_seats_per_row']) + 2) * 24;
      $divwidth=$divwidth * $rst_options['rst_zoom'];
+	 
+    $mindivwidth = 640;
+    if ($divwidth < $mindivwidth) {
+        $divwidth = $mindivwidth;
+    }
+
+	
     $showname = $data[0]['show_name'];
 
     $html .= '';
+	$seat_help='<span class="handy showseats" ></span> <span class="show-text">'.$event_seat_handicap.'  </span>';
+	if($rst_options['rst_seat_help']=="disable")
+	{
+	$seat_help='';
 	
 	
+	}
+$colorchat=apply_filters('row_seats_color_selection_css2',$colorchat,$showid);
+	
 
-    $html .= '<div id="currentcart"><div style="width: '.(int)(640 * $rst_options['rst_zoom']).'px;">
 
-        <span class="notbooked showseats" ></span> <span class="show-text">'.$event_seat_available.'  </span>
+    $html .= '<div id="currentcart"><div style="width: '.(int)(640 * $rst_options['rst_zoom']).'px;">'.$colorchat.'<span class="notbooked showseats" ></span> <span class="show-text">'.$event_seat_available.'  </span>
 
         <span class="blocked showseats" ></span> <span class="show-text">'.$event_seat_inyourcart.'  </span>
 
        <span class="un showseats" ></span> <span class="show-text">'.$event_seat_inotherscart.'  </span>
 
-       <span class="booked showseats" ></span> <span class="show-text">'.$event_seat_booked.'  </span>
+       <span class="booked showseats" ></span> <span class="show-text">'.$event_seat_booked.'  </span>'.$seat_help.'<br/><br/>';
 
-        <span class="handy showseats" ></span> <span class="show-text">'.$event_seat_handicap.'  </span><br/><br/>';
-
-    $html .= '</div></div><br><br><br><div class="stage-hdng" style="width:' . $divwidth . 'px; border:1px solid;border-radius:5px;box-shadow: 5px 5px 2px #888888;" >'.$event_seat_stage.'</div>';
+$topheader="";
+if($rst_options['rst_stage_alignment']=="top" or !$rst_options['rst_stage_alignment'])
+{
+$topheader='<div class="stage-hdng" style="margin-left: 0px; margin-top: 0px; margin-right: 0px; margin-bottom: 10px;width:' . $divwidth . 'px; border:1px solid;border-radius:5px;box-shadow: 5px 5px 2px #888888;" >'.$event_seat_stage.'</div>';
+}		
+    $html .= '</div></div><br><br><br>'.$topheader;
 
     $rst_bookings = $bookings;
 
@@ -3659,7 +4168,7 @@ $payment_methods = apply_filters('row_seats_currency_payment_methods', $active_p
 
     $foundcartitems = 0;
 
-    $html .= '<div class="seatplan" id="showid_' . $showid . '" style="width:' . $divwidth . 'px  !important;">';
+    $html .= '<div class="seatplan" id="showid_' . $showid . '" style="width:' . $divwidth . 'px  !important;" >';
 
     $nextrow = '';
 
@@ -3800,6 +4309,11 @@ $circle[$nofsets+$z]=$event_circle[$z];
         $seats_avail_per_row = unserialize($data['seats_avail_per_row']);
 
         $otherscart = false;
+		
+
+		$cssclassname="notbooked";
+		$cssclassname=apply_filters('row_seats_color_selection_css_name',$cssclassname,$data['seatcolor']);
+		
 
         if ($data['seattype'] == 'N') {
 
@@ -3807,7 +4321,7 @@ $circle[$nofsets+$z]=$event_circle[$z];
 
         } else if ($data['seattype'] == 'Y') {
 
-            $html .= '<li class="notbooked showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="Seat ' . $rowname . ($seatno) . ' Price ' . $symbol . $seatcost . ' Available" rel="' . $data['seattype'] . '">' . ($seatno) . '</li>';
+            $html .= '<li class="'.$cssclassname.' showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="Seat ' . $rowname . ($seatno) . ' Price ' . $symbol . $seatcost . ' Available" rel="' . $data['seattype'] . '">' . ($seatno) . '</li>';
 
         } else if ($data['seattype'] == 'H') {
 
@@ -3876,14 +4390,21 @@ $circle[$nofsets+$z]=$event_circle[$z];
     <?php
 
     }
-
+	
+	
     $html .= '<li class="ltr">' . $nextrow . '</li></ul></div>';
 
+	
     $html .= '</div>';
-
+//$html="";
+$html = apply_filters('row_seats_generel_admission_block_seatchart', $html);
     // cartitems ----->
-
-    $html .= '<div id="gap" style="clear:both;float:left;">&nbsp;</div><a NAME="view_cart"></a><div class="cartitems" style="width:' . $divwidth . 'px; border:1px solid;border-radius:5px;box-shadow: 5px 5px 2px #888888;"><div class="cart-hdng"align="center" style="border:0px solid;border-radius:5px;"><strong>'.$event_itemsincart.'</strong> <span style="float:right; width: 48px;"><a href="#show_top"><strong style="vertical-align: middle; float:left; color:#000;">Up</strong><img style="margin: 3px 0 0; float:right;" src="' . RSTPLN_URL . 'images/up.png" alt="Up" title="Up" /></a></span></div><table style="color:#51020b;">';
+$bottomheader="";
+if($rst_options['rst_stage_alignment']=="bottom")
+{
+$bottomheader='<br><br><br><br><div class="stage-hdng" style="width:' . $divwidth . 'px; border:1px solid;border-radius:5px;box-shadow: 5px 5px 2px #888888;clear:both;float:center;" >'.$event_seat_stage.'</div><br>';
+}
+    $html .= '<div id="gap" style="clear:both;float:left;">&nbsp;</div>'.$bottomheader.'<a NAME="view_cart"></a><div class="cartitems" style="width:' . $divwidth . 'px; border:1px solid;border-radius:5px;box-shadow: 5px 5px 2px #888888;"><div class="cart-hdng"align="center" style="border:0px solid;border-radius:5px;"><strong>'.$event_itemsincart.'</strong> <span style="float:right; width: 48px;"><a href="#show_top"><strong style="vertical-align: middle; float:left; color:#000;">Up</strong><img style="margin: 3px 0 0; float:right;" src="' . RSTPLN_URL . 'images/up.png" alt="Up" title="Up" /></a></span></div><table style="color:#51020b;">';
 
     if ($rst_bookings != '' && count($rst_bookings) > 0) {
 
@@ -3898,8 +4419,12 @@ $circle[$nofsets+$z]=$event_circle[$z];
             $html .= '<tr><td>' . $rst_booking['row_name'] . ($rst_booking['seatno']) . ' '.$languages_added.' - </td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>'.$event_item_cost.':' . $symbol . $rst_booking['price'] . '</td><td><img src="' . RSTPLN_URL . 'images/delete.png" class="deleteitem" id="' . $showname . '_' . $showid . '_' . $rst_booking['row_name'] . '_' . ($rst_booking['seatno']) . '" onclick="deleteitem(this);" style="cursor:pointer;border:none!important"/></td></tr>';
 
             $total = $total + $rst_booking['price'];
-
+        //$html .= var_dump($rst_booking);
         }
+		
+		
+		
+	$html = apply_filters('row_seats_seat_restriction_check_filter',$html,$rst_bookings,$showid);			
 
         $html .= '<tr><td></td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td class="total_price">'.$event_item_total.':' . $symbol . number_format($total, 2, '.', '') . '</td></tr><tr><td><a class="contact rsbutton" href="javascript:void(0);" >'.$event_item_checkout.'</a></td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td><a class="rsbutton" href="javascript:void(0);"  id="' . $sessiondata . '" onclick="deleteitemall(this);">'.$event_item_clearcart.'</a></td></tr></table></div>';
 
@@ -3937,6 +4462,10 @@ function rst_pay_settings()
     require_once('inc/inc.rst-pay-settings.php');
 }
 
+//function rst_special_price()
+//{
+  //  require_once('inc/inc.special-price.php');
+//}
 
 
 /*
@@ -3989,7 +4518,19 @@ function rst_transactions()
 
     require_once('inc/inc.transactions.php');
 }
+/*
+function wpuser_access()
+{
 
+    require_once('inc/inc.wpuser.php');
+}
+
+function seat_color()
+{
+
+    require_once('inc/inc.seatcolor.php');
+}
+*/
 
 
 /*
@@ -4031,6 +4572,54 @@ function bookedtickets($byshowid, $datefrom, $dateto)
         $sql .= " and rstbk.booking_time between '$currentdate 00:00:00' AND '$currentdate 23:59:59'";
 
     }
+
+    $sql .= " and rsts.id = bsr.show_id order by rstbk.booking_time desc";
+//print $sql;
+//exit;
+    if ($results = $wpdb->get_results($sql, ARRAY_A)) {
+
+        $bookedtickets = $wpdb->get_results($sql, ARRAY_A);
+
+    }
+
+    return $bookedtickets;
+
+}
+
+
+function bookedticketsdash()
+{
+
+    global $wpdb;
+
+    $currentdate = date('Y-m-d');
+
+    $bookedtickets = array();
+	
+			if ( is_user_logged_in() ) {
+				global $current_user;
+				get_currentuserinfo();
+				$user_id=$current_user->ID;	
+				$user_email=$current_user->user_email;				
+			
+			} else {			
+				$user_id=0;
+			}
+
+			
+
+    $sql = "select * from $wpdb->rst_bookings rstbk,$wpdb->rst_booking_seats_relation bsr,$wpdb->rst_shows rsts
+
+        where (rstbk.payment_status ='ipn_verified' OR rstbk.payment_status ='offline_registration')
+
+        and bsr.booking_id = rstbk.booking_id ";
+
+ 
+        $sql .= " AND (rstbk.user_id=" . $user_id." OR LOWER(rstbk.email)='".strtolower($user_email)."')";
+
+
+	
+
 
     $sql .= " and rsts.id = bsr.show_id order by rstbk.booking_time desc";
 //print $sql;
@@ -4148,11 +4737,22 @@ global $screenspacing;
 	$symbol = get_option('rst_currencysymbol');
     $symbols = array(
         "0" => "$",
-        "1" => "&pound;",
+		"1" => "&pound;",
         "2" => "&euro;",
         "3" => "&#3647;",
         "4" => "&#8362;",
-        "5" => "&yen;");
+        "5" => "&yen;",
+        "6" => "&#8377;",
+        "7" => "R$",
+        "8" => "kr",
+        "9" => "zł",
+        "10" => "Ft",
+        "11" => "Kč",
+        "12" => "&#1088;&#1091&#1073;",
+        "13" => "&#164;",
+        "14" => "&#x20B1;",
+        "15" => "Fr",
+        "16" => "RM");
     $symbol = $symbols[$symbol];
 
     $rst_options = get_option(RSTPLN_OPTIONS);
@@ -4186,6 +4786,10 @@ global $screenspacing;
 
     $divwidth = (($seats[0]['total_seats_per_row']) + 2) * 24;
     $divwidth=$divwidth * $rst_options['rst_zoom'];
+    $mindivwidth = 640;
+    if ($divwidth < $mindivwidth) {
+        $divwidth = $mindivwidth;
+    }	
     $showname = $data[0]['show_name'];
     $html='<style>
 ul.r li {
@@ -4209,11 +4813,11 @@ ul.r li {
 
         <span class="un showseats" >&nbsp;&nbsp;&nbsp;&nbsp;</span> In Other&#39;s Cart &nbsp;&nbsp;
 
-        <span class="handy showseats" >&nbsp;&nbsp;&nbsp;&nbsp;</span> Handicap Accomodation&nbsp;&nbsp;<br/><br/>
+        <span class="handy showseats" >&nbsp;&nbsp;&nbsp;&nbsp;</span> Wheelchair Access&nbsp;&nbsp;<br/><br/>
 
         <div id="stageshow"></div></div><div class="clear"></div>';
 
-    $html .= '<div class="seatplan" id="showid_' . $showid . '" style="width:' . $divwidth . 'px;">';
+    $html .= '<div class="seatplan" id="showid_' . $showid . '" style="width:' . $divwidth . 'px;" >';
 
     $nextrow = '';
     //  echo '<pre>';
@@ -4471,7 +5075,7 @@ function  rst_session_operations($action, $data)
 
             $sesid = session_id();
 
-            $wpdb->query("INSERT INTO $wpdb->rst_customer_session (rst_session_id,show_id,rowname,seatno,price,session_time,status) VALUES ('$sesid', $showid, '$rowname',$seatno,$price,now(),'blocked')");
+            $wpdb->query("INSERT INTO $wpdb->rst_customer_session (rst_session_id,show_id,rowname,seatno,price,session_time,status) VALUES ('$sesid', $showid, '$rowname','$seatno',$price,now(),'blocked')");
 
             return true;
 
@@ -4489,7 +5093,7 @@ function  rst_session_operations($action, $data)
 
             $sesid = session_id();
 
-            $wpdb->query("DELETE FROM $wpdb->rst_customer_session WHRE rst_session_id='$sesid' AND show_id = $showid AND  rowname='$rowname' AND seatno=$seatno");
+            $wpdb->query("DELETE FROM $wpdb->rst_customer_session WHERE rst_session_id='$sesid' AND show_id = $showid AND  rowname='$rowname' AND seatno='$seatno'");
 
             return true;
 
@@ -4595,7 +5199,7 @@ function rst_ipncall($data)
     $paypal_vars = print_r($data, true);
 
     $wpdb->query("UPDATE  $wpdb->rst_bookings SET paypal_vars='$paypal_vars',payment_status='ipn_verified',ticket_no='$ticketno',c_code='$c_code',c_discount=$c_discount,fees=$rstfees WHERE booking_id=" . $booking_id);
-
+$customfield_query= apply_filters('row_seats_custom_field_query',$booking_id);
     $sql = "SELECT * FROM $wpdb->rst_bookings where booking_id=" . $booking_id;
 
     if ($results = $wpdb->get_results($sql, ARRAY_A)) {
@@ -4627,7 +5231,7 @@ function rst_ipncall($data)
 
                     st.row_name = '$rowname' AND
 
-                    st.seatno = $seats AND
+                    st.seatno = '$seats' AND
 
                     st.seattype <>'' AND
 
@@ -4661,10 +5265,11 @@ function rst_ipncall($data)
             }
             $ticket_seat_no = $ticketno . '-' . $rowname . $seats;
 
-            $sql = "INSERT INTO $wpdb->rst_booking_seats_relation (ticket_no,ticket_seat_no,booking_id,show_id,b_seatid,total_paid,txn_id,seat_cost)
+            $sql = "INSERT INTO $wpdb->rst_booking_seats_relation (ticket_no,ticket_seat_no,booking_id,show_id,b_seatid,total_paid,txn_id,seat_cost,booking_status,comments)
 
-            VALUES ('$ticketno', '$ticket_seat_no', $booking_id,$showid,$seatid,$totalpaid,'$txn_id',$price)";
+            VALUES ('$ticketno', '$ticket_seat_no', $booking_id,$showid,$seatid,$totalpaid,'$txn_id',$price,'','')";
             //print "<br>".$sql;
+			//exit;
             $wpdb->query($sql);
 
         }
@@ -4756,7 +5361,7 @@ function rst_bookseatsfinal($data)
     $paypal_vars = print_r($data, true);
 
     $wpdb->query("UPDATE  $wpdb->rst_bookings SET paypal_vars='$paypal_vars',payment_status='ipn_verified',ticket_no='$ticketno',c_code='$c_code',c_discount=$c_discount,fees=$rstfees WHERE booking_id=" . $booking_id);
-
+//$customfield_query= apply_filters('row_seats_custom_field_query',$booking_id);
     $sql = "SELECT * FROM $wpdb->rst_bookings where booking_id=" . $booking_id;
 
     if ($results = $wpdb->get_results($sql, ARRAY_A)) {
@@ -4768,6 +5373,13 @@ function rst_bookseatsfinal($data)
         $booking_details = $booking_details[0]['booking_details'];
 
         $booking_details = unserialize($booking_details);
+		
+if($booking_details['customfield'])
+{
+unset($booking_details['customfield']);
+}
+
+		
 		//print_r($booking_details);
         $mytickets=array();
 		$seatcosts=array();
@@ -4789,7 +5401,7 @@ function rst_bookseatsfinal($data)
 
                     st.row_name = '$rowname' AND
 
-                    st.seatno = $seats AND
+                    st.seatno = '$seats' AND
 
                     st.seattype <>'' AND
 
@@ -4801,7 +5413,7 @@ function rst_bookseatsfinal($data)
 
             $seatid = $seatdata['seatid'];
 
-            if ($seatdata['seattype'] == 'T') {
+            if ($seatdata['seattype'] == 'T' || $seatdata['seattype'] == 'Y') {
 
                 $wpdb->query("UPDATE  $wpdb->rst_seats SET seattype='B',status='paid' WHERE show_id=" . $showid . " AND row_name='$rowname' AND seatid=" . $seatid);
 
@@ -4825,16 +5437,21 @@ function rst_bookseatsfinal($data)
             $ticket_seat_no = $ticketno . '-' . $rowname . $seats;
             $mytickets[]=$ticket_seat_no;
 			$seatcosts[]=$ticket_seat_no.":".$price;
-            $sql = "INSERT INTO $wpdb->rst_booking_seats_relation (ticket_no,ticket_seat_no,booking_id,show_id,b_seatid,total_paid,txn_id,seat_cost)
+			
+			$sqlexist="select * from $wpdb->rst_booking_seats_relation where ticket_no='$ticketno' and  ticket_seat_no='$ticket_seat_no' and booking_id=$booking_id and show_id=$showid and b_seatid=$seatid";
+			$sqlexist_details = $wpdb->get_results($sqlexist, ARRAY_A);
+			if(count($sqlexist_details)==0)
+			{
+            $sql = "INSERT INTO $wpdb->rst_booking_seats_relation (ticket_no,ticket_seat_no,booking_id,show_id,b_seatid,total_paid,txn_id,seat_cost,booking_status,comments)
 
-            VALUES ('$ticketno', '$ticket_seat_no', $booking_id,$showid,$seatid,$totalpaid,'$txn_id',$price)";
-            //print "<br>".$sql;
+            VALUES ('$ticketno', '$ticket_seat_no', $booking_id,$showid,$seatid,$totalpaid,'$txn_id',$price,'','')";
             $wpdb->query($sql);
+			}
 
         }
          $myticketsstring=implode(",",$mytickets) ;
 		 $seatcoststring=implode(",",$seatcosts) ;
-		 
+		$_SESSION['mybookingsess']= $booking_id;
         $sql = "select * from $wpdb->rst_bookings rstbk,$wpdb->rst_booking_seats_relation bsr,$wpdb->rst_shows rsts
 
         where (rstbk.payment_status ='ipn_verified' OR rstbk.payment_status ='offline_registration')
@@ -4885,13 +5502,25 @@ function sendrstmail($data, $txn_id)
 $symbol = get_option('rst_currencysymbol');
     $symbols = array(
         "0" => "$",
-        "1" => "&pound;",
+		"1" => "&pound;",
         "2" => "&euro;",
         "3" => "&#3647;",
         "4" => "&#8362;",
-        "5" => "&yen;");
+        "5" => "&yen;",
+        "6" => "&#8377;",
+        "7" => "R$",
+        "8" => "kr",
+        "9" => "zł",
+        "10" => "Ft",
+        "11" => "Kč",
+        "12" => "&#1088;&#1091&#1073;",
+        "13" => "&#164;",
+        "14" => "&#x20B1;",
+        "15" => "Fr",
+        "16" => "RM");
     $symbol = $symbols[$symbol];
     $useremailtemp = $rst_options['rst_etemp'];
+	$useremailtemp = html_entity_decode(stripslashes(apply_filters( 'the_content', $useremailtemp )));
 	
 //$wplanguagesoptions = get_option(RSTLANGUAGES_OPTIONS);
 //if($wplanguagesoptions['rst_enable_languages']=="on" && $wplanguagesoptions['languages_event_user_email_template'])
@@ -4900,24 +5529,30 @@ $symbol = get_option('rst_currencysymbol');
 //}	
 
     $adminemailtemp = $rst_options['rst_adminetemp'];
+	$adminemailtemp = html_entity_decode(stripslashes(apply_filters( 'the_content', $adminemailtemp )));
 
-    $search = array("<username>", "<showname>", "<showdate>", "<bookedseats>", "<downloadlink>");
-    $downloadlink = RSTTICKETDOWNURL . '?id=' . $txn_id;
+    $search = array("<username>", "<showname>", "<showdate>", "<bookedseats>", "<downloadlink>", "<showtime>","[username]", "[showname]", "[showdate]", "[bookedseats]", "[downloadlink]", "[showtime]");
+	
+   // $downloadlink = RSTTICKETDOWNURL . '?id=' . $txn_id;
+   $txn_id_enc=base64_encode($txn_id);
+	$downloadlink = get_bloginfo("wpurl"). '/?mybookingticket=' . $txn_id_enc;
     $dlink = 'Please click <a href="' . $downloadlink . '">here</a> to download your tickets';
-    $adminsearch = array("<blogname>", "<username>", "<showname>", "<showdate>", "<bookedseats>", "<availableseats>");
+    $adminsearch = array("<blogname>", "<username>", "<showname>", "<showdate>", "<bookedseats>", "<availableseats>", "<showtime>", "<totalshowcount>", "<totalbookedcount>","[blogname]", "[username]", "[showname]", "[showdate]", "[bookedseats]", "[availableseats]", "[showtime]", "[totalshowcount]", "[totalbookedcount]");
 
     $showid = $data[0]['show_id'];
 
     $availableseats = getavailableseatsbyshow($showid);
+	$bookedseats = getbookedseatsbyshow($showid);
+	$totalseats = gettotalseatsbyshow($showid);
 
     $username = $data[0]['name'];
 
     $useremail = $data[0]['email'];
 
     $showdate = $data[0]['show_date'];
-
+	$show_start_time = $data[0]['show_start_time'];
     $showdate = date('F j, Y', strtotime($showdate));
-
+    $showtime = date('jS \of F Y h:i:s A', strtotime($show_start_time));
 
     $showname = $data[0]['show_name'];
 
@@ -4929,11 +5564,11 @@ $symbol = get_option('rst_currencysymbol');
 
     }
 
-    $replace = array($username, $showname, $showdate, $seatdetails, $dlink);
+    $replace = array($username, $showname, $showdate, $seatdetails, $dlink,$showtime,$username, $showname, $showdate, $seatdetails, $dlink,$showtime);
 
     $blogname = get_option('blogname');
 
-    $adminreplace = array($blogname, $username, $showname, $showdate, $seatdetails, $availableseats);
+    $adminreplace = array($blogname, $username, $showname, $showdate, $seatdetails, $availableseats,$showtime,$totalseats,$bookedseats,$blogname, $username, $showname, $showdate, $seatdetails, $availableseats,$showtime,$totalseats,$bookedseats);
 
     $mailBodyText = str_replace($search, $replace, $useremailtemp);
 
@@ -4991,29 +5626,222 @@ $symbol = get_option('rst_currencysymbol');
     $fileType = 'pdf/pdf';
     $headers = "From: $recipientAddradmin\r\n";
     $headers .= "Content-type: text/html\r\n";
-		//print " To address".$recipientAddr."<br>".$subjectStr."<br>".$mailBodyText;
-	//exit;
-    if (mail($recipientAddr, $subjectStr, $mailBodyText, $headers)) {
 
-        //echo "<p>Mail has been sent with attachment ($fileName) !</p>";
-
-    } else {
-
-        //echo '<p>Mail sending failed with attachment ($fileName) !</p>';
-
-    }
+    //mail($recipientAddr, $subjectStr, $mailBodyText, $headers); // commented to enable default wp_mail
+	add_filter( 'wp_mail_content_type', 'set_html_content_type' );
+    wp_mail($recipientAddr, $subjectStr, $mailBodyText, $headers); 
 
     if ($stopadminemails != 'off') {
-        mail($recipientAddradmin, $subjectStradmin, $mailBodyTextadmin, $headers);
-        //echo "<p>Mail has been sent with attachment ($fileName) !</p>";
-
-    } else {
-
-        // echo '<p>Mail sending failed with attachment ($fileName) !</p>';
+        //mail($recipientAddradmin, $subjectStradmin, $mailBodyTextadmin, $headers);// commented to enable default wp_mail
+		wp_mail($recipientAddradmin, $subjectStradmin, $mailBodyTextadmin, $headers); 
+		$email_copy = $rst_options['rst_email_copy'];
+		
+		if($email_copy)
+		{
+			$email_copy_array=explode(",",$email_copy);
+			if(count($email_copy_array)>0)
+			{
+			   foreach($email_copy_array as $ademail)
+			   {
+					if (is_email($ademail, true) )
+					{
+					wp_mail($ademail, $subjectStradmin, $mailBodyTextadmin, $headers); 
+					
+					}
+			   }
+			}
+		}
 
     }
-//exit;
+	remove_filter( 'wp_mail_content_type', 'set_html_content_type' );
 }
+function set_html_content_type() {
+
+	return 'text/html';
+}
+
+
+
+
+
+
+
+function displaybookingdetails($booking_id)
+{
+global $wpdb;
+//print_r($_SESSION);
+//print "<br>";
+//print_r($_COOKIE);
+//$_SESSION['mybookingsess']=212;
+//if($_COOKIE['mybookingcook'])
+//{
+//$booking_id=$_COOKIE['mybookingcook'];
+if($_REQUEST['item_number'])
+{
+$_SESSION['mybookingsess']=$_REQUEST['item_number'];
+
+}
+
+
+if($_SESSION['mybookingsess'])
+{
+$booking_id=$_SESSION['mybookingsess'];
+
+
+        $sql = "select * from $wpdb->rst_bookings rstbk,$wpdb->rst_booking_seats_relation bsr,$wpdb->rst_shows rsts
+
+        where (rstbk.payment_status ='ipn_verified' OR rstbk.payment_status ='offline_registration')
+
+        and bsr.booking_id = rstbk.booking_id
+
+        and rsts.id = bsr.show_id
+
+        and bsr.booking_id =" . $booking_id;
+
+        if ($results = $wpdb->get_results($sql, ARRAY_A)) {
+
+            $booking_details = $wpdb->get_results($sql, ARRAY_A);			
+
+            $data = $booking_details;
+
+
+        //}
+		
+		$txn_id="TXYN".$booking_id;
+		
+		$tsql = "SELECT * FROM rst_payment_transactions WHERE tx_str='".$booking_id."'";
+		$trows = $wpdb->get_results($tsql, ARRAY_A);
+		$trows=$trows[0];
+		//print_r($trows);
+		$pstatus=$trows['payment_status'];
+		$gtotal=$trows['gross'];
+		
+		
+		
+		
+
+		
+//print_r($data);
+    $rst_options = get_option(RSTPLN_OPTIONS);
+    $stopadminemails = $rst_options['rst_disable_admin_email'];
+    $rst_options = get_option(RSTPLN_OPTIONS);
+    $rst_paypal_options = get_option(RSTPLN_PPOPTIONS);
+
+    $symbol = $rst_paypal_options['currencysymbol'];
+	
+$symbol = get_option('rst_currencysymbol');
+    $symbols = array(
+        "0" => "$",
+		"1" => "&pound;",
+        "2" => "&euro;",
+        "3" => "&#3647;",
+        "4" => "&#8362;",
+        "5" => "&yen;",
+        "6" => "&#8377;",
+        "7" => "R$",
+        "8" => "kr",
+        "9" => "zł",
+        "10" => "Ft",
+        "11" => "Kč",
+        "12" => "&#1088;&#1091&#1073;",
+        "13" => "&#164;",
+        "14" => "&#x20B1;",
+        "15" => "Fr",
+        "16" => "RM");
+    $symbol = $symbols[$symbol];
+    $useremailtemp = $rst_options['rst_etemp'];
+	$useremailtemp = html_entity_decode(stripslashes(apply_filters( 'the_content', $useremailtemp )));
+	
+//$wplanguagesoptions = get_option(RSTLANGUAGES_OPTIONS);
+//if($wplanguagesoptions['rst_enable_languages']=="on" && $wplanguagesoptions['languages_event_user_email_template'])
+//{
+//$useremailtemp=$wplanguagesoptions['languages_event_user_email_template'];
+//}	
+
+    $adminemailtemp = $rst_options['rst_adminetemp'];
+	$adminemailtemp = html_entity_decode(stripslashes(apply_filters( 'the_content', $adminemailtemp )));
+
+    $search = array("<username>", "<showname>", "<showdate>", "<bookedseats>", "<downloadlink>", "<showtime>","[username]", "[showname]", "[showdate]", "[bookedseats]", "[downloadlink]", "[showtime]");
+	
+   // $downloadlink = RSTTICKETDOWNURL . '?id=' . $txn_id;
+   $txn_id_enc=base64_encode($txn_id);
+	$downloadlink = get_bloginfo("wpurl"). '/?mybookingticket=' . $txn_id_enc;
+    $dlink = 'Please click <a href="' . $downloadlink . '">here</a> to download your tickets';
+    $adminsearch = array("<blogname>", "<username>", "<showname>", "<showdate>", "<bookedseats>", "<availableseats>", "<showtime>","[blogname]", "[username]", "[showname]", "[showdate]", "[bookedseats]", "[availableseats]", "[showtime]");
+
+    $showid = $data[0]['show_id'];
+
+    $availableseats = getavailableseatsbyshow($showid);
+
+    $username = $data[0]['name'];
+
+    $useremail = $data[0]['email'];
+
+    $showdate = $data[0]['show_date'];
+	$show_start_time = $data[0]['show_start_time'];
+    $showdate = date('F j, Y', strtotime($showdate));
+    $showtime = date('jS \of F Y h:i:s A', strtotime($show_start_time));
+
+    $showname = $data[0]['show_name'];
+
+    $seatdetails = '';
+
+    for ($i = 0; $i < count($data); $i++) {
+
+        $seatdetails .= $data[$i]['ticket_seat_no'] . ' - ' . $symbol . $data[$i]['seat_cost'] . '<br/>';
+
+    }
+if($pstatus=='Pending')		
+{	
+	
+						$tags1 = array('{payer_name}', '{payer_email}', '{payment_status}', '{show_name}', '{show_date}', '{seats}','{amount}');
+						$vals1 = array($username, $username, $pstatus,$showname ,$showdate,$seatdetails,$gtotal );
+						$pemailbody = html_entity_decode(stripslashes(apply_filters( 'the_content', get_option('rst_pending_email_body') )));
+						$body = str_replace($tags1, $vals1, $pemailbody);
+						//$mail_headers = "Content-Type: text/plain; charset=utf-8\r\n";
+						//$mail_headers .= "From: ".get_option('rst_from_name')." <".get_option('rst_from_email').">\r\n";
+						//$mail_headers .= "X-Mailer: PHP/".phpversion()."\r\n";
+						//wp_mail(/*$email*/$payer_offlinepayment, get_option('rst_pending_email_subject'), $body, $mail_headers);
+print $body;						
+}else
+{
+    $replace = array($username, $showname, $showdate, $seatdetails, $dlink,$showtime,$username, $showname, $showdate, $seatdetails, $dlink,$showtime);
+
+    $blogname = get_option('blogname');
+
+    $adminreplace = array($blogname, $username, $showname, $showdate, $seatdetails, $availableseats,$showtime,$blogname, $username, $showname, $showdate, $seatdetails, $availableseats,$showtime);
+
+    $mailBodyText = str_replace($search, $replace, $useremailtemp);
+
+    $mailBodyTextadmin = str_replace($adminsearch, $adminreplace, $adminemailtemp);
+
+    $rst_options = get_option(RSTPLN_OPTIONS);
+
+	print $mailBodyText;
+	
+	}
+	unset($_SESSION['mybookingsess']);	
+}
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /*
@@ -5042,6 +5870,56 @@ function getavailableseatsbyshow($showid)
     return $availseats;
 
 }
+
+function gettotalseatsbyshow($showid)
+{
+    global $wpdb;
+
+    $sql = "select count(*) as total from $wpdb->rst_shows gs,$wpdb->rst_seats gse
+            WHERE gs.id = gse.show_id
+            AND gse.seattype != ''
+            AND gs.id =" . $showid;
+
+    $availseats = 0;
+
+    $bookingdata = $wpdb->get_results($sql, ARRAY_A);
+
+    for ($row = 0; $row < count($bookingdata); $row++) {
+
+        $availseats = $bookingdata[$row]['total'];
+
+    }
+
+    return $availseats;
+
+}
+
+function getbookedseatsbyshow($showid)
+{
+    global $wpdb;
+
+    $sql = "select count(*) as total from $wpdb->rst_shows gs,$wpdb->rst_seats gse
+            WHERE gs.id = gse.show_id
+            AND gse.seattype != '' 
+			AND gse.seattype = 'B' 
+            AND gs.id =" . $showid;
+
+    $availseats = 0;
+
+    $bookingdata = $wpdb->get_results($sql, ARRAY_A);
+
+    for ($row = 0; $row < count($bookingdata); $row++) {
+
+        $availseats = $bookingdata[$row]['total'];
+
+    }
+
+    return $availseats;
+
+}
+
+
+
 
 
 function delete_seats($action, $finalseats, $showid)
@@ -5474,8 +6352,34 @@ function offline_payment_form($_data = array()) {
 function offline_payment_form_process() {
 
 	global $row_seats, $wpdb;
+//print_r($_POST);
 
-	if(isset($_POST['action']) && $_POST['action'] == 'row_seats_default_offlinepayment') {	
+	if(isset($_POST['action']) && $_POST['action'] == 'row_seats_default_offlinepayment') {
+
+	$symbol = get_option('rst_currencysymbol');
+	$currency = get_option('rst_currency');
+    $symbols = array(
+        "0" => "$",
+		"1" => "&pound;",
+        "2" => "&euro;",
+        "3" => "&#3647;",
+        "4" => "&#8362;",
+        "5" => "&yen;",
+        "6" => "&#8377;",
+        "7" => "R$",
+        "8" => "kr",
+        "9" => "zł",
+        "10" => "Ft",
+        "11" => "Kč",
+        "12" => "&#1088;&#1091&#1073;",
+        "13" => "&#164;",
+        "14" => "&#x20B1;",
+        "15" => "Fr",
+        "16" => "RM");
+
+    $symbol = $symbols[$symbol];
+
+	
 		$gross_total = $_REQUEST['amount'];
 		$first_name= $_REQUEST['first_name'];	
 		$last_name= $_REQUEST['last_name'];
@@ -5504,7 +6408,7 @@ function offline_payment_form_process() {
 			'ZIP' => $zip,
 			'PHONE' => $phone,
 			'AMT' => $gross_total,
-			'CURRENCYCODE' => 'USD',
+			'CURRENCYCODE' => $currency,
 			'DESC' => $campaign_title
 		);
 
@@ -5532,7 +6436,7 @@ function offline_payment_form_process() {
 		if($_POST['x_invoice_num'])	
 		{
 			$inid=$_POST['x_invoice_num'];
-			$mc_currency =  "USD";
+			$mc_currency =  $currency;
 
 			if(current_user_can('contributor') || current_user_can('administrator')) // If booking done by Admin/Contributer
 			{
@@ -5553,6 +6457,12 @@ function offline_payment_form_process() {
 			if ($results = $wpdb->get_results($sql, ARRAY_A)) {
 				$booking_details = $wpdb->get_results($sql, ARRAY_A);
 				$data = $booking_details[0];
+				
+ 		   
+		$payer_name	=$booking_details[0]['name'];
+		$payer_offlinepayment	=$booking_details[0]['email'];
+
+		
 				$show_name = $booking_details[0]['show_name'];
 				$show_date= $booking_details[0]['show_date'];
 				$booking_details = $booking_details[0]['booking_details'];
@@ -5584,7 +6494,7 @@ function offline_payment_form_process() {
 
 
 			$sql = "INSERT INTO rst_payment_transactions (
-				tx_str, payer_name, payer_email, gross, currency, payment_status, transaction_type, details, created, deleted,custom,first_name,last_name,address,city,state,zip,country,phone,show_name,show_date) VALUES (
+				tx_str, payer_name, payer_email, gross, currency, payment_status, transaction_type, details, created, deleted,custom,first_name,last_name,address,city,state,zip,country,phone,show_name,show_date,coupon_code,coupon_discount,special_fee,ticket_no,seat_numbers,seat_cost) VALUES (
 				'".mysql_real_escape_string($inid)."',
 				'".mysql_real_escape_string($payer_name)."',
 				'".mysql_real_escape_string($payer_offlinepayment)."',
@@ -5603,7 +6513,13 @@ function offline_payment_form_process() {
 					'".$country."',
 					'".$phone."',
 					'".$show_name."',
-					'".$show_date."'
+					'".$show_date."',
+					'',
+					'0',
+					'0',
+					'',
+					'',
+					''
 			)";
 
 			$wpdb->query($sql) or die(mysql_error());
@@ -5634,10 +6550,10 @@ function offline_payment_form_process() {
 		}
 
 		$logMessages .= "Done.";
-		$wpdb->query("INSERT INTO $wpdb->rst_paypal_ipn_log (booking_time, booking_id, messages) VALUES (now(), '$inid', '$logMessages')");	
+		//$wpdb->query("INSERT INTO $wpdb->rst_paypal_ipn_log (booking_time, booking_id, messages) VALUES (now(), '$inid', '$logMessages')");	
 
-		if(current_user_can('contributor') || current_user_can('administrator'))
-		{
+		//if(current_user_can('contributor') || current_user_can('administrator'))
+		//{
 		?><script language='javascript'>
 		alert('Successfully Booked! eTicket.');
 		window.location.href=window.location.href;
@@ -5646,12 +6562,12 @@ function offline_payment_form_process() {
 		<?php	
 		exit;
 
-		}else{
+		//}else{
 
-		$_POST['return']=get_bloginfo("wpurl")."/thank-you?id=".$inid;
+		//$_POST['return']=get_bloginfo("wpurl")."/thank-you?id=".$inid;
 
-		}
-		wp_redirect($_POST['return']); 			
+		//}
+		//wp_redirect($_POST['return']); 			
 
 	}		
 }
@@ -5683,7 +6599,7 @@ class row_seats_module {
 	function get_options() {
 
 		$exists = get_option('row_seatsmodule_'.$this->module['id'].'_'.'version');
-
+        //$exists=1;    
 		if ($exists) {
 
 			foreach ($this->options as $key => $value) {
@@ -5710,7 +6626,7 @@ class row_seats_module {
 
 			}
 
-			update_option('row_seatsmodule_'.$this->module['id'].'_'.'version', WPGCMODULE_VERSION);
+			update_option('row_seatsmodule_'.$this->module['id'].'_'.'version', '2');
 
 		}
 
@@ -5820,6 +6736,97 @@ class row_seats_module {
 
 
 
+//----Row Seats All Events widget starts here----//
+class allevents_widget extends WP_Widget {
+	function allevents_widget() {
+		//parent::WP_Widget(false, __('Row Seats Events', 'rst'));
+		parent::__construct( false, 'Row Seats Events' );
+	}
+
+	function widget($args, $instance) {
+		global $wpdb;
+		extract( $args );
+		$title = apply_filters( 'widget_title', empty($instance['title']) ? '' : $instance['title'], $instance, $this->id_base);
+		$args='posts_per_page=100&post_type=page';
+		query_posts( $args );
+
+		// The Loop
+		$i=1;
+		$shortcodepages=array();
+		$shortcodepagesimages=array();
+		while ( have_posts() ) : the_post();
+
+			$titlehere=get_the_title();
+			$content = get_the_content();
+			$pattern = get_shortcode_regex();
+			//$pimage = get_the_post_thumbnail(get_the_ID(), array(50,50));
+			$pimage = get_the_post_thumbnail();
+				if (   preg_match_all( '/'. $pattern .'/s', $content, $matches )
+					&& array_key_exists( 2, $matches )
+					&& in_array( 'showseats', $matches[2] ) )
+				{
+				$getid=explode("=",$matches[3][0]);
+				$posturl=wp_get_shortlink() ;
+
+				$shortcodepages[$getid[1]]=$posturl;
+				$shortcodepagesimages[$getid[1]]=$pimage;
+				}  
+
+				
+			$i++;
+		endwhile;
+
+// Reset Query
+		wp_reset_query();
+
+		$sql = "SELECT * FROM $wpdb->rst_shows where show_end_time>=now() order by show_end_time";
+		$found = 0;
+		$data = Array();
+		$widgetcontent="";
+		if ($results = $wpdb->get_results($sql, ARRAY_A)) {
+
+			foreach ($results as $value) {
+
+			$pimage="";
+			$edate = date("F j, Y",strtotime($value['show_date'])); 
+			if($shortcodepages[$value['id']])
+			{
+			if($shortcodepagesimages[$value['id']])
+			{
+			$pimage= $shortcodepagesimages[$value['id']]."<br><br>";
+			}
+			$widgetcontent.="<div style='padding:6px;margin:6px;border: dotted 1px black;' ><a href='".$shortcodepages[$value['id']]."'>".$pimage.$value['show_name']."</a><br>Date : ".$edate."</div>";
+			}
+			}
+
+		}
+
+	
+		if (!empty($title) || !empty($widgetcontent)) {
+			echo $before_widget;
+			if (!empty($title)) echo $before_title.$title.$after_title;
+			echo $widgetcontent;
+			echo $after_widget;
+		}
+
+	}
+
+	function update($new_instance, $old_instance) {
+		$instance = $old_instance;
+		$instance['title'] = strip_tags( $new_instance['title'] );
+		return $instance;
+	}
+
+	function form($instance) {
+		$instance = wp_parse_args((array)$instance, array('title' => ''));
+		$title = strip_tags($instance['title']);
+		echo '
+		<p>
+			<label for="'.$this->get_field_id("title").'">'.__('Title', 'rst').':</label>
+			<input class="widefat" type="text" id="'.$this->get_field_id('title').'" name="'.$this->get_field_name('title').'" value="'.esc_attr($title).'" />
+		</p>';
+	}
+}
 
 
 

@@ -38,7 +38,8 @@ function rst_create_tables()
       PRIMARY KEY (id),
       KEY id (id)
     );";
-        mysql_query($sql);
+       // mysql_query($sql);
+		$wpdb->query($sql);
     }
 
     if ($wpdb->get_var("SHOW TABLES LIKE '$wpdb->rst_customer_session'") != $wpdb->rst_customer_session) {
@@ -48,14 +49,15 @@ function rst_create_tables()
       rst_session_id varchar(50) NOT NULL,
       show_id int(11) NOT NULL,
       rowname varchar(2) NOT NULL,
-      seatno int(2) NOT NULL,
+      seatno varchar(50) NOT NULL,
       price decimal(10,2) NOT NULL,
       session_time timestamp NOT NULL,
       status  varchar(10) NOT NULL,
       PRIMARY KEY (sessionid),
       KEY id (sessionid)
     );";
-        mysql_query($sql);
+        //mysql_query($sql);
+		$wpdb->query($sql);
     }
 
     if ($wpdb->get_var("SHOW TABLES LIKE '$wpdb->rst_bookings'") != $wpdb->rst_bookings) {
@@ -78,7 +80,8 @@ function rst_create_tables()
       PRIMARY KEY (booking_id),
       KEY id (booking_id)
     );";
-        mysql_query($sql);
+        //mysql_query($sql);
+		$wpdb->query($sql);
     }
 
     if ($wpdb->get_var("SHOW TABLES LIKE '$wpdb->rst_shows'") != $wpdb->rst_shows) {
@@ -99,7 +102,8 @@ function rst_create_tables()
       PRIMARY KEY (id),
       KEY id (id)
     );";
-        mysql_query($sql);
+        //mysql_query($sql);
+		$wpdb->query($sql);
     }
 
     if ($wpdb->get_var("SHOW TABLES LIKE '$wpdb->rst_seats'") != $wpdb->rst_seats) {
@@ -109,7 +113,7 @@ function rst_create_tables()
       show_id int(10) NOT NULL,
       row_name varchar(2) NOT NULL,
       total_seats_per_row int(10)  NULL,
-      seatno int(11) NOT NULL,
+      seatno varchar(50) NOT NULL,
       seattype varchar(1) NULL,
       originaltype varchar(1) NULL,
       seat_price decimal(10,2) NOT NULL,
@@ -119,11 +123,13 @@ function rst_create_tables()
       created_date datetime NULL,
       mod_date datetime NULL,
 	  mod_by  varchar(255) NOT NULL,
+	  seatcolor int(10) NOT NULL DEFAULT '0',
       PRIMARY KEY (seatid),
       KEY id (seatid)
     );";
 
-        mysql_query($sql);
+        //mysql_query($sql);
+		$wpdb->query($sql);
     }
 	
     if ($wpdb->get_var("SHOW TABLES LIKE 'rst_payment_transactions'") != 'rst_payment_transactions') {
@@ -160,8 +166,32 @@ function rst_create_tables()
   UNIQUE KEY id (id)
 );";
 
-        mysql_query($sql);
+        //mysql_query($sql);
+		$wpdb->query($sql);
     }	
+	
+	
+    if ($wpdb->get_var("SHOW TABLES LIKE 'rst_seat_colors'") != 'rst_seat_colors') {
+        //seatid,show_id,row_name,total_seats_per_row,seatno,seattype,originaltype,seat_price,discount_price,created_date,mod_date,mod_by
+        $sql = "CREATE TABLE rst_seat_colors (
+  color_id int(10) NOT NULL AUTO_INCREMENT,
+  color_name varchar(100) NOT NULL,
+  color_code varchar(100) NOT NULL,
+  color_show_id int(10) NOT NULL,
+  PRIMARY KEY (color_id)
+);";
+
+       // mysql_query($sql);
+		$wpdb->query($sql);
+    }		
+	
+			$sqlexist="SHOW columns from rst_bookings where field='user_id'";
+			$sqlexist_details = $wpdb->get_results($sqlexist, ARRAY_A);
+			if(count($sqlexist_details)==0)
+			{
+            $sql = "ALTER TABLE `rst_bookings` ADD `user_id` INT( 10 ) NOT NULL DEFAULT '0'";
+            $wpdb->query($sql);
+			}	
 
     /*if ($wpdb->get_var("SHOW TABLES LIKE '$wpdb->rst_memebers'") != $wpdb->rst_memebers) {
         $sql = "CREATE TABLE " . $wpdb->rst_memebers . " (

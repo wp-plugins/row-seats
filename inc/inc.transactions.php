@@ -219,17 +219,17 @@ define('RST_STATUS_ACTIVE', '1');
 
 			foreach ($rows as $row) {
 
-				$certificates = $wpdb->get_results("SELECT * FROM rst_certificates WHERE tx_str = '".$row["tx_str"]."'", ARRAY_A);
+				//$certificates = $wpdb->get_results("SELECT * FROM rst_certificates WHERE tx_str = '".$row["tx_str"]."'", ARRAY_A);
 
 				$list = array();
 
-				foreach ($certificates as $certificate) {
+				//foreach ($certificates as $certificate) {
 
-					if ($certificate["deleted"] == 0) $list[] = '<a href="'.admin_url('admin.php').'?page=rst-certificates&s='.$certificate["code"].'">'.esc_attr($certificate["code"]).'</a>';
+					//if ($certificate["deleted"] == 0) $list[] = '<a href="'.admin_url('admin.php').'?page=rst-certificates&s='.$certificate["code"].'">'.esc_attr($certificate["code"]).'</a>';
 
-					else $list[] = '*'.$certificate["code"];
+					//else $list[] = '*'.$certificate["code"];
 
-				}
+				//}
 
 $offlinepaymentstring="";			
 				

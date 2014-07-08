@@ -15,7 +15,7 @@
                         1. Row Seats settings are self explanatory, but if you need clarification you can click <a
                             href="http://www.rowseatsplugin.com/row-seats-plugin-information" target="_blank">here.</a><br/><br/>
 
-                        2. You must set your event date through the Show Calendar. The calendar works this
+                        2. You must set your event date through the Add an Event. The calendar works this
                         way:<br/><br/>
 
                         a) Month view - When you create and save a show in this view, it is considered for the whole day
@@ -29,7 +29,7 @@
                         detail information on how to form your show click <a
                             href="http://www.rowseatsplugin.com/row-seats-plugin-information" target="_blank">here.</a><br/><br/>
 
-                        4. The PayPal option can be set either live or test mode (sandbox developer test). You can
+                        4. The PayPal option (sold seperately) can be set either live or test mode (sandbox developer test). You can
                         select your currency and fill out the necessary information that you fits your
                         business.<br/><br/>
 
@@ -40,7 +40,7 @@
 
                         Booking seats is easier with Row Seats plugin. This is a new solution to the increasing request
                         to sell seats. It features shopping cart features, calendar backend function, csv file upload of
-                        your seat details. It also handles special seating such as handicap accessability. Just place
+                        your seat plan. It also handles special seating such as wheelchair access. Just place
                         the shortcode in a page or post and sell your show. It has paypal integration to accept
                         payments.<br/>
                     </div>

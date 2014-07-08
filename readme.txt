@@ -5,9 +5,9 @@ Author: gcwebsolutions
 Author URI: http://www.rowseatsplugin.com/row-seats-plugin-information
 Donate link: http://www.rowseatsplugin.com/row-seats-plugin-information
 Tags: row seats, booking seats, event booking, shows booking, event manager, booking events, sell seats, booking tickets, ticket booth, paypal booking
-Requires at least: 3.2
-Tested up to: 3.8
-Stable tag: 2.16
+Requires at least: 3.5.1
+Tested up to: 3.9.1
+Stable tag: 2.34
 
 Booking seats is easier with Row Seats plugin. This is a new solution to the increasing request to sell seats.
 
@@ -41,7 +41,7 @@ How to this plugin works.
 
 = How do I place an event =
 
-1. You must set your event date through the Month Calendar tab. The calendar works this way:
+1. You must set your event date through the Add an Event tab. The calendar works this way:
 
 a) Month view - When you create and save a show in this view, it is considered for the whole day event.
 b) Week view - You can set the time start/end of your event for any particular day.
@@ -53,7 +53,11 @@ c) Day view - same as week view above.
 
 = My page or post doesn't show up the show/event, what do I do? =
 
-The shortcode will work in any page or post. You can obtain the shortcode after you upload your seating chart (CSV file).  Make sure that the shortcode starts with [showseats id=X] (X represents the id number).
+Very important to first press "Save Settings" button, even if you have not filled out all the information fields. The shortcode will work in any page or post. You can obtain the shortcode after you upload your seating chart (CSV file).  Make sure that the shortcode starts with [showseats id=X] (X represents the id number).
+
+= How do I access extra functionality, or extra settings?
+
+Our plugin is always updated to our customers first.  The core will always be the latest from our website (not from this repository). For added functionality we have modules that will bring new features to Row Seats. You can visit our site for more information http://www.rowseatsplugin.com/products
 
 == Screenshots ==
 
@@ -66,6 +70,35 @@ The shortcode will work in any page or post. You can obtain the shortcode after 
 
 
 == Changelog ==
+
+= 2.34 =
+* Small core modification for wp-users <a title="Row Seats add-ons" href="https://www.rowseatsplugin.com/products" target="_blank">(module required)</a>
+
+= 2.32 =
+* Added Row Seats Event widget, it will show all events that are in pages
+* Additional currency symbols added (Swedish & Norwegian Krone, Polish Złoty, Brazilian Reals, Malaysian Ringgit, Philippine Peso, Indian Rupee, Hungarian Forint, Russian Ruble, Swiss Franc, Czech Koruna)
+
+= 2.30 =
+* Fixed several warnings on particular servers 
+* Stop ajax refresh on page if idle (useful for saving server resources)
+* Small bug fixes
+
+= 2.28 =
+* Email tags are now changed to [ ] brackets instead of < >
+* Small bug with visitor booking seats, and taking them to a fictitious page after booking.
+
+= 2.26 =
+* Minor bug fixes
+* Added option to re-send email booking confirmations
+* Fixed strange bug of Field 'coupon_code' doesn't have a default value
+
+= 2.22 =
+* Many changes for new modules
+* Overall better reporting <a title="Row Seats add-ons" href="https://www.rowseatsplugin.com/products" target="_blank">(module required)</a>
+* General Admission adjustment <a title="Row Seats add-ons" href="https://www.rowseatsplugin.com/products" target="_blank">(module required)</a>
+* Fixed transaction report when booking as admin (currency now shows correctly)
+* Payment Settings default wording settings now populated.
+* Time interval option for cart refresh enabled.
 
 = 2.16 =
 * Overall better functions

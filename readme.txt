@@ -70,12 +70,12 @@ Through WP Dashboard
 
 Here is the list of the shortcodes for email templates:
 
-[username] = This tag will display the name of the person that booked seats (this name is placed during checkout)
-[showname] = It will display any show title/name
-[showdate] = It will display the date that the show begins
-[bookedseats] = It will display the amount of seats that were booked by the visitor
-[availableseats] = As admin user you’ll be notified how many seats are left to book a full house
-[blogname] = The name of your website will be displayed with this tag
+[username] = This tag will display the name of the person that booked seats (this name is placed during checkout)</br>
+[showname] = It will display any show title/name</br>
+[showdate] = It will display the date that the show begins</br>
+[bookedseats] = It will display the amount of seats that were booked by the visitor</br>
+[availableseats] = As admin user you’ll be notified how many seats are left to book a full house</br>
+[blogname] = The name of your website will be displayed with this tag</br>
 [downloadlink] =This tag is only used if Row Seats Tix is enabled.  It will display a download link to the QR Ticket.
 
 = How do I access extra functionality, or extra settings? =

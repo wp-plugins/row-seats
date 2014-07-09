@@ -66,6 +66,18 @@ Through WP Dashboard
 
 • First, take a full db backup of Row Seats Core through your server panel (usually using phpmyadmin) should you need to restore.  Afterwards, you can update normally through WP plugin section
 
+= What are the email template shortcodes? =
+
+Here is the list of the shortcodes for email templates:
+
+[username] = This tag will display the name of the person that booked seats (this name is placed during checkout)
+[showname] = It will display any show title/name
+[showdate] = It will display the date that the show begins
+[bookedseats] = It will display the amount of seats that were booked by the visitor
+[availableseats] = As admin user you’ll be notified how many seats are left to book a full house
+[blogname] = The name of your website will be displayed with this tag
+[downloadlink] =This tag is only used if Row Seats Tix is enabled.  It will display a download link to the QR Ticket.
+
 = How do I access extra functionality, or extra settings? =
 
 Our plugin is always updated to our customers first.  The core will always be the latest from our website (not from this repository). For added functionality we have modules that will bring new features to Row Seats. You can visit our site for more information http://www.rowseatsplugin.com/products

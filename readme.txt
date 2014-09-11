@@ -6,7 +6,7 @@ Author URI: http://www.rowseatsplugin.com/row-seats-plugin-information
 Donate link: http://www.rowseatsplugin.com/row-seats-plugin-information
 Tags: row seats, booking seats, event booking, shows booking, event manager, booking events, sell seats, booking tickets, ticket booth, paypal booking
 Requires at least: 3.5.1
-Tested up to: 3.9.1
+Tested up to: 4.0
 Stable tag: 2.34
 
 Booking seats is easier with Row Seats plugin. This is a new solution to the increasing request to sell seats.

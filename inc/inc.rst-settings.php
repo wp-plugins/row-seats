@@ -337,6 +337,20 @@ if ($rst_options['rst_idle_message'] == '') {
                     </select>
                 </td>
             </tr>    
+			
+	 <tr valign="top">
+            <tr valign="top">
+                <th scope="row"><label
+                        for="name"><?php echo __('Fix the Stage/Shopping cart width in px(this will override the Zoom option above). This is a global setting it affects all seat charts. The option is only useful for small seat charts aesthetics.', 'rst'); ?></label>
+                </th>
+                <td>
+                    <input type="text" id="rst_fixed_width" name="rst_fixed_width" 
+                           value="<?php echo stripslashes($rst_options['rst_fixed_width']); ?>"/>px
+                </td>
+            </tr>
+
+			
+			
 <tr valign="top">
     <th scope="row"><label for="rst_alignment"><?php echo __('Alignment', 'rst'); ?></label>
     </th>
@@ -442,7 +456,7 @@ if ($rst_options['rst_idle_message'] == '') {
 
                 <div class="inside">
 
-                    <p><a href="http://www.rowseatsplugin.com/products" target="_blank"><img
+                    <p><a href="http://www.rowseatsplugin.com/" target="_blank"><img
                                 style="cursor:pointer;"
                                 src="<?php echo RSTPLN_URL ?>images/multi-language.jpg"/></a>
                         </a></p>                    
@@ -450,7 +464,7 @@ if ($rst_options['rst_idle_message'] == '') {
                                 style="cursor:pointer;"
                                 src="<?php echo RSTPLN_URL ?>images/row-seats-qr-tix-ad.jpg"/></a>
                         </a></p>
-                    <p><a href="http://www.rowseatsplugin.com/cortesia-wp-theme-for-events" target="_blank"><img
+                    <p><a href="http://www.rowseatsplugin.com/" target="_blank"><img
                                 style="cursor:pointer;"
                                 src="<?php echo RSTPLN_URL ?>images/row-seats-cortesia-theme.jpg"/></a>
                         </a></p>

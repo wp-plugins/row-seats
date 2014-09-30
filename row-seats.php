@@ -16,7 +16,7 @@ Plugin URI: http://www.rowseatsplugin.com
 
 Description: Booking seats is easier with Row Seats plugin.This is a new solution to the increasing request to sell seats.It features shopping cart features, calendar backend function, csv file upload of your seat details. It also handles special seating such as handicap accessability. Just place the shortcode in a page or post and sell your show.
 
-Version: 2.34
+Version: 2.42
 
 Author: GC Development Team
 

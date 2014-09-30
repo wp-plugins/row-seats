@@ -7,7 +7,7 @@ Donate link: http://www.rowseatsplugin.com/row-seats-plugin-information
 Tags: row seats, booking seats, event booking, shows booking, event manager, booking events, sell seats, booking tickets, ticket booth, paypal booking
 Requires at least: 3.5.1
 Tested up to: 4.0
-Stable tag: 2.34
+Stable tag: 2.42
 
 Booking seats is easier with Row Seats plugin. This is a new solution to the increasing request to sell seats.
 
@@ -55,36 +55,6 @@ c) Day view - same as week view above.
 
 Very important to first press "Save Settings" button, even if you have not filled out all the information fields. The shortcode will work in any page or post. You can obtain the shortcode after you upload your seating chart (CSV file).  Make sure that the shortcode starts with [showseats id=X] (X represents the id number).
 
-= I received plugin an update plugin notice from dashboard, should I update while having "live" bookings? =
-It is strongly advised that you only update when bookings are past. But, if you need to update while you have 'live' bookings, then do the following:
-
-Through FTP
-
-• First, take a full db backup of Row Seats Core through your server panel (usually using phpmyadmin) should you need to restore, then deactivate the plugin.  Afterwards, upload the new version through ftp overwriting  all Row Seats files.  If you made any customization, you'll loose them.
-
-Through WP Dashboard
-
-• First, take a full db backup of Row Seats Core through your server panel (usually using phpmyadmin) should you need to restore.  Afterwards, you can update normally through WP plugin section
-
-= What are the email template shortcodes? =
-
-Here is the list of the shortcodes for email templates:
-
-*[username] = This tag will display the name of the person that booked seats (this name is placed during checkout)</br>
-*[showname] = It will display any show title/name</br>
-*[showdate] = It will display the date that the show begins</br>
-*[bookedseats] = It will display the amount of seats that were booked by the visitor</br>
-*[availableseats] = As admin user you’ll be notified how many seats are left to book a full house</br>
-*[blogname] = The name of your website will be displayed with this tag</br>
-*[downloadlink] =This tag is only used if Row Seats Tix is enabled.  It will display a download link to the QR Ticket.
-
-= How do I access extra functionality, or extra settings? =
-
-Our plugin is always updated to our customers first.  The core will always be the latest from our website (not from this repository). For added functionality we have modules that will bring new features to Row Seats. You can visit our site for more information http://www.rowseatsplugin.com/products
-
-= Shortcode for user email confirmation to be shown in page/post =
-You can use the following shortcode [rowseatthankspage] in any page or post, this will populate the same information as you would in an email confirmation.
-
 == Screenshots ==
 
 1. screenshot-1.png
@@ -97,13 +67,26 @@ You can use the following shortcode [rowseatthankspage] in any page or post, thi
 
 == Changelog ==
 
+= 2.42 =
+* Added ability to show up to 4 digit row and seat number on the seat charts
+* Added new function to resize Stage/Shopping cart for very small seat charts.
+
+= 2.40 =
+* Added a double check of booked seats during checkout
+
+= 2.38 =
+* Line of code modified for new PayPal cart handling. PayPal module v2.20 and up required.
+
+= 2.36 =
+* Small bug fixes
+* PHP 5.5 ready
+
 = 2.34 =
 * Small core modification for wp-users <a title="Row Seats add-ons" href="https://www.rowseatsplugin.com/products" target="_blank">(module required)</a>
 
 = 2.32 =
 * Added Row Seats Event widget, it will show all events that are in pages
 * Additional currency symbols added (Swedish & Norwegian Krone, Polish Złoty, Brazilian Reals, Malaysian Ringgit, Philippine Peso, Indian Rupee, Hungarian Forint, Russian Ruble, Swiss Franc, Czech Koruna)
-* Added shortcode for email confirmation shown on any page/post, use shortcode [rowseatthankspage]
 
 = 2.30 =
 * Fixed several warnings on particular servers 

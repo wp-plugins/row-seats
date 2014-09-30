@@ -48,7 +48,7 @@ function rst_create_tables()
       sessionid int(11) NOT NULL AUTO_INCREMENT,
       rst_session_id varchar(50) NOT NULL,
       show_id int(11) NOT NULL,
-      rowname varchar(2) NOT NULL,
+      rowname varchar(20) NOT NULL,
       seatno varchar(50) NOT NULL,
       price decimal(10,2) NOT NULL,
       session_time timestamp NOT NULL,
@@ -111,7 +111,7 @@ function rst_create_tables()
         $sql = "CREATE TABLE " . $wpdb->rst_seats . " (
       seatid int(10) NOT NULL AUTO_INCREMENT,
       show_id int(10) NOT NULL,
-      row_name varchar(2) NOT NULL,
+      row_name varchar(20) NOT NULL,
       total_seats_per_row int(10)  NULL,
       seatno varchar(50) NOT NULL,
       seattype varchar(1) NULL,
@@ -192,6 +192,34 @@ function rst_create_tables()
             $sql = "ALTER TABLE `rst_bookings` ADD `user_id` INT( 10 ) NOT NULL DEFAULT '0'";
             $wpdb->query($sql);
 			}	
+			
+$sqlexist="SELECT CHARACTER_MAXIMUM_LENGTH
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE COLUMN_NAME = 'row_name'
+AND table_name = 'rst_seats'
+LIMIT 1 ";
+
+    if ($wpdb->get_var($sqlexist) != 20) {
+	
+            $sql = "ALTER TABLE `rst_seats` CHANGE `row_name` `row_name` VARCHAR(20)";
+            $wpdb->query($sql);	
+}	
+
+
+
+$sqlexist="SELECT CHARACTER_MAXIMUM_LENGTH
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE COLUMN_NAME = 'rowname'
+AND table_name = 'rst_customer_session'
+LIMIT 1 ";
+
+    if ($wpdb->get_var($sqlexist) != 20) {
+	
+            $sql = "ALTER TABLE `rst_customer_session` CHANGE `rowname` `rowname` VARCHAR(20)";
+            $wpdb->query($sql);	
+}
+			
+			
 
     /*if ($wpdb->get_var("SHOW TABLES LIKE '$wpdb->rst_memebers'") != $wpdb->rst_memebers) {
         $sql = "CREATE TABLE " . $wpdb->rst_memebers . " (

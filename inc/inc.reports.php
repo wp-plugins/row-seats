@@ -45,11 +45,15 @@ if(isset($_REQUEST['ctxnid']))
 
 if(isset($_REQUEST['Update']))
 {
-	$sql=mysql_query("update  rst_bookings set name='".$_REQUEST['b_by']."',email='".$_REQUEST['email']."',phone='".$_REQUEST['phone']."' where booking_id='".$_REQUEST['bid']."'");
+//print "<br>update  rst_bookings set name='".$_REQUEST['b_by']."',email='".$_REQUEST['email']."',phone='".$_REQUEST['phone']."' where booking_id=".$_REQUEST['bid'];
+
+$sql="update  rst_bookings set name='".$_REQUEST['b_by']."',email='".$_REQUEST['email']."',phone='".$_REQUEST['phone']."' where booking_id=".$_REQUEST['bid'];
+$wpdb->query($sql);
+	//$sql=mysql_query("update  rst_bookings set name='".$_REQUEST['b_by']."',email='".$_REQUEST['email']."',phone='".$_REQUEST['phone']."' where booking_id=".$_REQUEST['bid']);
 
 	//$ssql=mysql_query("update  rst_booking_seats_relation set ticket_no='".$_REQUEST['t_no']."',ticket_seat_no='".$_REQUEST['ts_no']."',txn_id='".$_REQUEST['txn_id']."',seat_cost='".$_REQUEST['seat_cost']."' where id='".$_REQUEST['hid']."'");
 	
-	$etrafound=mysql_query("select * from rst_bookings where booking_id='".$_REQUEST['bid']."'");
+	$etrafound=mysql_query("select * from rst_bookings where booking_id=".$_REQUEST['bid']);
 $asql=mysql_fetch_array($etrafound);
 
 
@@ -71,7 +75,12 @@ $extra+=$extra['customfield'];
 
 $booking=serialize($extra);
 	//print_r($booking);
-$update_customfield=mysql_query("update  rst_bookings set booking_details='".$booking."' where booking_id='".$_REQUEST['bid']."'");	
+	//print "<br>update  rst_bookings set booking_details='".$booking."' where booking_id=".$_REQUEST['bid'];
+//$update_customfield=mysql_query("update  rst_bookings set booking_details='".$booking."' where booking_id=".$_REQUEST['bid']);	
+$sql="update  rst_bookings set booking_details='".$booking."' where booking_id=".$_REQUEST['bid'];
+$wpdb->query($sql);
+
+
 //print_r($_REQUEST['bid']);
 //exit;
 	}
@@ -553,6 +562,7 @@ class Projects_Reposts_Table extends WP_List_Table_Custom
 
     function prepare_items()
     {
+	global $wpdb;
 
         /**
          * First, lets decide how many records per page to show
@@ -649,6 +659,18 @@ $alldata = bookedticketssearch($_REQUEST['keywords']);
             }
             $alldata[$i]['booking_status'] = ($alldata[$i]['booking_status'] == '') ? 'Booked' : $alldata[$i]['booking_status'];
 
+    $sql_trn = "select transaction_type from rst_payment_transactions rsttr where rsttr.tx_str=".$alldata[$i]['booking_id'];
+	$trstatus='';
+
+    if ($resultsl_trn = $wpdb->get_results($sql_trn, ARRAY_A)) {
+
+        $bookedtickets_trn = $wpdb->get_results($sql_trn, ARRAY_A);
+		$trstatus=$bookedtickets_trn[0]['transaction_type'];
+		$trstatus=" (".$trstatus.")";
+		$alldata[$i]['booking_status'].=$trstatus;
+
+    }			
+			
 
             $alldata[$i]['seat_cost'] = $symbol . $alldata[$i]['seat_cost'];
             $alldata[$i]['total_paid'] = $symbol . $alldata[$i]['total_paid'];

@@ -334,6 +334,13 @@ if ($rst_options['rst_idle_message'] == '') {
                         <option value="0.7" <?php  if ($rst_options['rst_zoom'] == '0.7') echo 'selected';?>>
                             70%
                         </option>
+                        <option value="0.6" <?php  if ($rst_options['rst_zoom'] == '0.6') echo 'selected';?>>
+                            60%
+                        </option>
+
+						
+						
+						
                     </select>
                 </td>
             </tr>    

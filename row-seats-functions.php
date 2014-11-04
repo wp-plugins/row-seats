@@ -85,7 +85,7 @@ global $wpdb;
 						if ($results = $wpdb->get_results($sql, ARRAY_A)) {
 							$booking_details = $wpdb->get_results($sql, ARRAY_A);       
 							$data = $booking_details;
-							$show_name = $booking_details[0]['show_name'];
+							$show_name = addslashes($booking_details[0]['show_name']);
 							
 							$show_date= $booking_details[0]['show_date'];
 							$booking_details = $booking_details[0]['booking_details'];
@@ -790,7 +790,7 @@ $rst_idle_clear_cart=7;
     $screenspacing=$rst_options['rst_zoom'];
     }
 	
-$seatsize=$wpdb->get_var("SELECT LENGTH( seatno ) AS fieldlength FROM rst_seats where show_id=".$showid['id']." ORDER BY fieldlength DESC LIMIT 1 ");
+$seatsize=$wpdb->get_var("SELECT LENGTH( seatno ) AS fieldlength FROM rst_seats where show_id='".addslashes($showid['id'])."' ORDER BY fieldlength DESC LIMIT 1 ");
 //print "<br>1-".$seatsize;
 if($seatsize>2)
 {
@@ -835,7 +835,7 @@ $seatsize=0;
 	
 	
     ?>
-<!--Row Seats v2.42 starts-->
+<!--Row Seats v2.44 starts-->
    
     <div style="width: <?php echo $divwidth;?>px; <?php echo $style; ?>">
 <?php
@@ -864,7 +864,7 @@ apply_filters('rowseats-addtocalendar-js',$showdata);
  
 
 <?php
-$seatsize=$wpdb->get_var("SELECT LENGTH( seatno ) AS fieldlength FROM rst_seats where show_id=".$showid['id']." ORDER BY fieldlength DESC LIMIT 1 ");
+$seatsize=$wpdb->get_var("SELECT LENGTH( seatno ) AS fieldlength FROM rst_seats where show_id='".addslashes($showid['id'])."' ORDER BY fieldlength DESC LIMIT 1 ");
 //print "<br>9-".$seatsize;
 if($seatsize>2)
 {
@@ -956,6 +956,9 @@ wp_enqueue_script('jquery');
     }
     $currenttime = current_time('mysql', 0);
 
+	$bookedseats = getbookedseatsbyshow($showid);
+	$totalseats = gettotalseatsbyshow($showid);
+ //$bookedseats=4;  $totalseats=5; 
 	
 $vairablename="row_seats_wpuser_access_".$showdata['id'];
 $vairablenamevalue=$rst_options[$vairablename];
@@ -990,7 +993,17 @@ echo '<div><br/><strong>'.$rstidlemsg.'</strong></div></div><br>';
 
         echo   '<div><br/><strong>'.$event_booking_closed.'</strong></div></div>';
 
-    } else {
+    } elseif($bookedseats>=$totalseats)  {
+	
+	 echo   "<div id='eventdetails' >
+
+        $event_name_title:$eventname <br/>
+
+        $event_datetime: $eventdate  <br/>
+
+        $event_venue:$venue<br/><div><br/><strong>online booking close, we appreciate your patronage..</strong></div></div>";
+	
+	} else {
 
         $html = '';
 
@@ -1014,7 +1027,7 @@ echo '<div><br/><strong>'.$rstidlemsg.'</strong></div></div><br>';
         </div></div></div>";
         // <----- showcart
 		apply_filters('row_seats_generel_admission_form',$showid);
-		$html .= apply_filters('rowseats-addtocalendar-showbutton',$showdata);
+		apply_filters('rowseats-addtocalendar-showbutton',$showdata);
         $html .= "<div id='showprview' class='localcss' align='center' style='width:100%; margin-left: auto;margin-right: auto;' >";
 
 		
@@ -2213,7 +2226,7 @@ function rst_shows_operations($action, $data, $currentcart)
                     $seatno = $allblockedseat['seatno'];
                     $seatid = $allblockedseat['seatid'];
                     if ($allblockedseat['seattype'] == 'T') {
-                        $sql = "UPDATE  $wpdb->rst_seats SET seattype='$originaltype',discount_price=$dicount,status='not blocked' WHERE show_id=" . $showid . " AND row_name='$row' AND seattype<>'' AND seatno=$seatno AND seatid=" . $seatid;
+                        $sql = "UPDATE  $wpdb->rst_seats SET seattype='$originaltype',discount_price=$dicount,status='not blocked' WHERE show_id=" . $showid . " AND row_name='$row' AND seattype<>'' AND seatno='$seatno' AND seatid=" . $seatid;
                         $wpdb->query($sql);
 
                         for ($k = 0; $k < count($currentcart); $k++) {
@@ -2510,7 +2523,7 @@ function rst_shows_operations($action, $data, $currentcart)
             break;
 
         case 'insert':
-            $name = $data['title'];
+            $name = $wpdb->prepare($data['title']);
             $venue = $data['body'];
             $showstart = $data['start'];
             $showend = $data['end'];
@@ -2528,7 +2541,7 @@ function rst_shows_operations($action, $data, $currentcart)
             break;
 
         case 'update':
-            $name = $data['title'];
+            $name = $wpdb->prepare($data['title']);
             $venue = $data['body'];
             $showstart = $data['start'];
             $showend = $data['end'];
@@ -2575,7 +2588,7 @@ function rst_shows_operations($action, $data, $currentcart)
         case 'byid':
 
             $id = $data['vmid'];
-            $sql = "SELECT * FROM $wpdb->rst_shows where id=" . $id;
+            $sql = "SELECT * FROM $wpdb->rst_shows where id='" . addslashes($id)."'";
             $found = 0;
             $data = Array();
             if ($results = $wpdb->get_results($sql, ARRAY_A)) {
@@ -2939,7 +2952,7 @@ $symbol = get_option('rst_currencysymbol');
     } else {
         $seats = rst_seats_operations('reverse', '', $showid);
     }
-$seatsize=$wpdb->get_var("SELECT LENGTH( seatno ) AS fieldlength FROM rst_seats where show_id=".$showid." ORDER BY fieldlength DESC LIMIT 1 ");
+$seatsize=$wpdb->get_var("SELECT LENGTH( seatno ) AS fieldlength FROM rst_seats where show_id='".addslashes($showid)."' ORDER BY fieldlength DESC LIMIT 1 ");
 //print "<br>9-".$seatsize;
 if($seatsize>2)
 {
@@ -2959,7 +2972,7 @@ $seatsize=0;
 	{
 	$divwidth =$rst_options['rst_fixed_width'];
 	}	 
-    $showname = $data[0]['show_name'];
+    $showname = addslashes($data[0]['show_name']);
 
     $rst_bookings = $currentcart;
 
@@ -3185,7 +3198,7 @@ function getshowbyid($showid)
 
     global $wpdb;
 
-    $sql = "SELECT * FROM $wpdb->rst_shows where id=" . $showid;
+    $sql = "SELECT * FROM $wpdb->rst_shows where id='" . addslashes($showid)."'";
 
     $found = 0;
 
@@ -3299,7 +3312,7 @@ function rst_seats_operations($action, $finalseats, $showid)
             break;
 
         case 'update':
-            $name = $data['title'];
+            $name = addslashes($data['title']);
             $venue = $data['body'];
             $showstart = $data['start'];
             $showend = $data['end'];
@@ -3315,7 +3328,7 @@ function rst_seats_operations($action, $finalseats, $showid)
 
         case 'list':
 
-            $sql = "SELECT * FROM $wpdb->rst_seats where show_id=" . $showid . " order by seatid ";
+            $sql = "SELECT * FROM $wpdb->rst_seats where show_id='" . addslashes($showid) . "' order by seatid ";
             $found = 0;
             $data = Array();
             if ($results = $wpdb->get_results($sql, ARRAY_A)) {
@@ -3337,7 +3350,7 @@ function rst_seats_operations($action, $finalseats, $showid)
 
         case 'reverse':
 
-            $sql = "SELECT * FROM $wpdb->rst_seats where show_id=" . $showid . " order by seatid ";
+            $sql = "SELECT * FROM $wpdb->rst_seats where show_id='" . addslashes($showid) . "' order by seatid ";
             $found = 0;
             $data = Array();
             if ($results = $wpdb->get_results($sql, ARRAY_A)) {
@@ -3389,7 +3402,7 @@ function rst_seats_operations($action, $finalseats, $showid)
         case 'byid':
 
             $id = $data['vmid'];
-            $sql = "SELECT * FROM $wpdb->rst_shows where id=" . $id;
+            $sql = "SELECT * FROM $wpdb->rst_shows where id='" . addslashes($id)."'";
             $found = 0;
             $data = Array();
             if ($results = $wpdb->get_results($sql, ARRAY_A)) {
@@ -3668,6 +3681,7 @@ apply_filters('row_seats_seat_restriction_js_filter','');
                 document.getElementById('startedcheckout').value = "yes";
 
                 jQuery(".QTPopup").animate({width: 'show'}, 'slow');
+                jQuery('#contact_name').focus(); //when popup call move to first field)
             })
 
             jQuery(".closeBtn").click(function () {
@@ -4238,7 +4252,7 @@ $payment_methods = apply_filters('row_seats_currency_payment_methods', $active_p
     } else {
         $seats = rst_seats_operations('reverse', '', $showid);
     }
-$seatsize=$wpdb->get_var("SELECT LENGTH( seatno ) AS fieldlength FROM rst_seats where show_id=".$showid." ORDER BY fieldlength DESC LIMIT 1 ");
+$seatsize=$wpdb->get_var("SELECT LENGTH( seatno ) AS fieldlength FROM rst_seats where show_id='".addslashes($showid)."' ORDER BY fieldlength DESC LIMIT 1 ");
 //print "<br>12-".$seatsize;
 if($seatsize>2)
 {
@@ -4923,7 +4937,7 @@ global $screenspacing,$wpdb;
     } else {
         $seats = rst_seats_operations('reverse', '', $showid);
     }
-$seatsize=$wpdb->get_var("SELECT LENGTH( seatno ) AS fieldlength FROM rst_seats where show_id=".$showid." ORDER BY fieldlength DESC LIMIT 1 ");
+$seatsize=$wpdb->get_var("SELECT LENGTH( seatno ) AS fieldlength FROM rst_seats where show_id='".addslashes($showid)."' ORDER BY fieldlength DESC LIMIT 1 ");
 print "<br>15-".$seatsize;
 if($seatsize>2)
 {
@@ -4949,7 +4963,7 @@ $seatsize=0;
 	
     $showname = $data[0]['show_name'];
 	
-$seatsize=$wpdb->get_var("SELECT LENGTH( seatno ) AS fieldlength FROM rst_seats where show_id=".$showid." ORDER BY fieldlength DESC LIMIT 1 ");
+$seatsize=$wpdb->get_var("SELECT LENGTH( seatno ) AS fieldlength FROM rst_seats where show_id='".addslashes($showid)."' ORDER BY fieldlength DESC LIMIT 1 ");
 print "<br>2--------".$seatsize;
 if($seatsize>2)
 {
@@ -5635,7 +5649,7 @@ unset($booking_details['customfield']);
 
             $booking_details = $wpdb->get_results($sql, ARRAY_A);
 			
-			$show_name=$booking_details[0]['show_name'];
+			$show_name=addslashes($booking_details[0]['show_name']);
 			$show_date=$booking_details[0]['show_date'];
 			$wpdb->query("UPDATE  rst_payment_transactions SET show_name='$show_name',show_date='$show_date',ticket_no='$ticketno',coupon_code='$c_code',coupon_discount='$c_discount',special_fee='$rstfees',seat_numbers='$myticketsstring', seat_cost='$seatcoststring' WHERE tx_str=" . $booking_id);
 
@@ -5723,7 +5737,7 @@ $symbol = get_option('rst_currencysymbol');
     $showdate = date('F j, Y', strtotime($showdate));
     $showtime = date('jS \of F Y h:i:s A', strtotime($show_start_time));
 
-    $showname = $data[0]['show_name'];
+    $showname = stripslashes($data[0]['show_name']);
 
     $seatdetails = '';
 
@@ -6632,7 +6646,7 @@ function offline_payment_form_process() {
 		$payer_offlinepayment	=$booking_details[0]['email'];
 
 		
-				$show_name = $booking_details[0]['show_name'];
+				$show_name = addslashes($booking_details[0]['show_name']);
 				$show_date= $booking_details[0]['show_date'];
 				$booking_details = $booking_details[0]['booking_details'];
 				$ticketno = $rst_options['rst_ticket_prefix'] . $_POST['x_invoice_num'];
@@ -6996,7 +7010,6 @@ class allevents_widget extends WP_Widget {
 		</p>';
 	}
 }
-
 
 
 ?>

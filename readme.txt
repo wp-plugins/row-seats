@@ -7,7 +7,7 @@ Donate link: http://www.rowseatsplugin.com/row-seats-plugin-information
 Tags: row seats, booking seats, event booking, shows booking, event manager, booking events, sell seats, booking tickets, ticket booth, paypal booking
 Requires at least: 3.5.1
 Tested up to: 4.0
-Stable tag: 2.42
+Stable tag: 2.44
 
 Booking seats is easier with Row Seats plugin. This is a new solution to the increasing request to sell seats.
 
@@ -64,12 +64,16 @@ Very important to first press "Save Settings" button, even if you have not fille
 5. screenshot-5.png
 6. screenshot-6.png
 
-
-== Changelog ==
+= 2.44 =
+* Added 60% zoom for large seat charts
+* Fixed small bug related to <a title="Row Seats Add to Calendar" href="https://www.rowseatsplugin.com/products" target="_blank">Row Seats Add to Calendar</a>
+* During checkout, the Name & Last Name field will automatically point the cursor to it
 
 = 2.42 =
 * Added ability to show up to 4 digit row and seat number on the seat charts
-* Added new function to resize Stage/Shopping cart for very small seat charts.
+* Added new function to resize Stage/Shopping cart for very small seat charts
+
+== Changelog ==
 
 = 2.40 =
 * Added a double check of booked seats during checkout

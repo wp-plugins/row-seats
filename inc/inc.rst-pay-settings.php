@@ -84,7 +84,7 @@ $mydata=array();
 $mydata['rst_currencysymbol']= $symbol[0];
 $mydata['rst_currency']= "USD";
 $mydata['rst_from_name']= "Row seat";
-$mydata['rst_from_email']= "admin@rowseatsplugin.com";
+$mydata['rst_from_email']= "admin@my-site-url.com";
 $mydata['rst_success_email_subject']= "Payment Success  - Your ticket is ready";
 $mydata['rst_success_email_body']= "Dear {payer_name},
 

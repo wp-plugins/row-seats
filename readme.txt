@@ -64,6 +64,8 @@ Very important to first press "Save Settings" button, even if you have not fille
 5. screenshot-5.png
 6. screenshot-6.png
 
+== Changelog ==
+
 = 2.44 =
 * Added 60% zoom for large seat charts
 * Fixed small bug related to <a title="Row Seats Add to Calendar" href="https://www.rowseatsplugin.com/products" target="_blank">Row Seats Add to Calendar</a>
@@ -72,8 +74,6 @@ Very important to first press "Save Settings" button, even if you have not fille
 = 2.42 =
 * Added ability to show up to 4 digit row and seat number on the seat charts
 * Added new function to resize Stage/Shopping cart for very small seat charts
-
-== Changelog ==
 
 = 2.40 =
 * Added a double check of booked seats during checkout

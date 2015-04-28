@@ -1,0 +1,33 @@
+,"Legend: Y= Available,B=block",,,,,,,,,,,,,,,,,
+,"Row #  ex. [A, B, C, etc]",,,,,,,,,,,,,,,,,
+,"Seat # ex [1, 2, 3, 4, etc]",,,,,,,,,,,,,,,,,
+Price,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11
+,ROW,ROW,ROW,ROW,ROW,ROW,STALL,ROW,ROW,ROW,BALCONY,ROW,ROW,ROW,CIRCLE,ROW,ROW,ROW
+SEAT #,BB,AA,A,B,C,D,,E,F,G,,H,I,J,,K,L,M
+1,,,,,,,S,,,,L,,,,C,,,
+2,,,,,,,S,,,,L,,,,C,Y,Y,Y
+3,,,,,,,S,,,,L,,,,C,Y,Y,Y
+4,,,,,,,S,,,,L,Y,Y,Y,C,Y,Y,Y
+5,Y,Y,Y,Y,Y,Y,S,Y,Y,Y,L,Y,Y,Y,C,Y,Y,Y
+6,Y,Y,Y,Y,Y,Y,S,Y,Y,Y,L,Y,Y,Y,C,Y,Y,Y
+7,Y,Y,Y,Y,Y,Y,S,Y,Y,Y,L,Y,Y,Y,C,Y,Y,Y
+8,Y,Y,Y,Y,Y,Y,S,Y,Y,Y,L,Y,Y,Y,C,Y,Y,Y
+9,Y,Y,Y,Y,Y,Y,S,Y,Y,Y,L,Y,Y,Y,C,Y,Y,Y
+10,Y,Y,Y,Y,Y,Y,S,Y,Y,Y,L,Y,Y,Y,C,Y,Y,Y
+11,Y,Y,Y,Y,Y,Y,S,Y,Y,Y,L,Y,Y,Y,C,Y,Y,Y
+12,Y,Y,Y,Y,Y,Y,S,Y,Y,Y,L,Y,Y,Y,C,,,Y
+13,Y,Y,Y,Y,Y,Y,S,Y,Y,Y,L,Y,Y,Y,C,,,Y
+14,,,,,,,S,,,Y,L,,,,C,,,Y
+15,,,,,,,S,,,Y,L,,,,C,,,Y
+16,Y,Y,Y,Y,Y,Y,S,Y,Y,Y,L,Y,Y,Y,C,,,
+17,Y,Y,Y,Y,Y,Y,S,Y,Y,Y,L,Y,Y,Y,C,,,
+18,Y,Y,Y,Y,Y,Y,S,Y,Y,Y,L,Y,Y,Y,C,,,
+19,Y,Y,Y,Y,Y,Y,S,Y,Y,Y,L,Y,Y,Y,C,,,
+20,Y,Y,Y,Y,Y,Y,S,Y,Y,Y,L,Y,Y,Y,C,,,
+21,Y,Y,Y,Y,Y,Y,S,Y,Y,Y,L,Y,Y,Y,C,,,
+22,Y,Y,Y,Y,Y,Y,S,Y,Y,Y,L,Y,Y,Y,C,,,
+23,Y,Y,Y,Y,Y,Y,S,Y,Y,Y,L,Y,Y,Y,C,,,
+24,Y,Y,Y,Y,Y,Y,S,Y,Y,Y,L,Y,Y,Y,C,,,
+25,,,,,,,S,,,,L,Y,Y,Y,C,,,
+26,,,,,,,S,,,,L,Y,Y,Y,C,,,
+27,,,,,,,S,,,,L,Y,Y,Y,C,,,

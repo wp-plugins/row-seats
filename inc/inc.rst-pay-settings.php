@@ -36,7 +36,7 @@ $symbol = array(
 $currencies=array();
 $currencies = apply_filters('row_seats_currencies', $currencies); //getting currency list from all payment gateways
 //array of payment setting variables
-$rst_payment_settings=array("rst_success_email_subject","rst_success_email_body","rst_failed_email_subject","rst_failed_email_body","rst_currencysymbol","rst_currency","rst_from_name","rst_from_email","rst_pending_email_body","rst_pending_email_subject");
+$rst_payment_settings=array("rst_success_email_subject","rst_success_email_body","rst_failed_email_subject","rst_failed_email_body","rst_currencysymbol","rst_currency","rst_from_name","rst_from_email","rst_pending_email_body","rst_pending_email_subject","rst_waitingapproval_email_subject","rst_waitingapproval_email_body","rst_cancelled_email_subject","rst_cancelled_email_body","rst_refund_email_subject","rst_refund_email_body");
 
 $updated = '';
 $validmsg = '';
@@ -84,7 +84,7 @@ $mydata=array();
 $mydata['rst_currencysymbol']= $symbol[0];
 $mydata['rst_currency']= "USD";
 $mydata['rst_from_name']= "Row seat";
-$mydata['rst_from_email']= "admin@my-site-url.com";
+$mydata['rst_from_email']= "admin@rowseatsplugin.com";
 $mydata['rst_success_email_subject']= "Payment Success  - Your ticket is ready";
 $mydata['rst_success_email_body']= "Dear {payer_name},
 
@@ -307,7 +307,105 @@ echo '<tr>
 
 										</td>
 
-									</tr><tr>
+									</tr>
+									<tr>
+
+										<td colspan=2 align=center bgcolor="#e19230"><font color=black>
+
+											Payment Gateway other status
+
+											<br /><em>'.__('Only applies to some payment gateways that have the following status : pending,cancelled,refund', 'row_seats').'</em>
+
+										</font></td>
+
+									</tr>									
+									<tr>
+
+										<th>'.__('Waiting Approval/Pending e-mail subject for Payer', 'row_seats').':</th>
+
+										<td>
+
+											<input type="text" id="rst_waitingapproval_email_subject" name="rst_waitingapproval_email_subject" value="'.stripslashes(htmlspecialchars($rst_options['rst_waitingapproval_email_subject'], ENT_QUOTES)).'" class="widefat">
+
+											<br /><em>'.__('In case of Waiting Approval/Pending payment, your customers receive e-mail message about that. This is subject field of the message.', 'row_seats').'</em>
+
+										</td>
+
+									</tr>
+
+									<tr>
+
+										<th>'.__('Waiting Approval/Pending  e-mail body for Payer', 'row_seats').':</th>
+
+										<td>
+
+											<textarea id="rst_waitingapproval_email_body" name="rst_waitingapproval_email_body" style="height: 120px;" class="widefat">'.stripslashes(htmlspecialchars($rst_options['rst_waitingapproval_email_body'], ENT_QUOTES)).'</textarea>
+
+											<br /><em>'.__('This e-mail message is sent to your customers in case of Waiting Approval/Pending payment. You can use the following keywords: {payer_name}, {payer_email}, {payment_status}.', 'row_seats').'</em>
+
+										</td>
+
+									</tr>
+									
+									
+									<tr>
+
+										<th>'.__('Cancelled e-mail subject for Payer', 'row_seats').':</th>
+
+										<td>
+
+											<input type="text" id="rst_cancelled_email_subject" name="rst_cancelled_email_subject" value="'.stripslashes(htmlspecialchars($rst_options['rst_cancelled_email_subject'], ENT_QUOTES)).'" class="widefat">
+
+											<br /><em>'.__('In case of Cancelled payment, your customers receive e-mail message about that. This is subject field of the message.', 'row_seats').'</em>
+
+										</td>
+
+									</tr>
+
+									<tr>
+
+										<th>'.__('Cancelled  e-mail body for Payer', 'row_seats').':</th>
+
+										<td>
+
+											<textarea id="rst_cancelled_email_body" name="rst_cancelled_email_body" style="height: 120px;" class="widefat">'.stripslashes(htmlspecialchars($rst_options['rst_cancelled_email_body'], ENT_QUOTES)).'</textarea>
+
+											<br /><em>'.__('This e-mail message is sent to your customers in case of Cancelled payment. You can use the following keywords: {payer_name}, {payer_email}, {payment_status}.', 'row_seats').'</em>
+
+										</td>
+
+									</tr>		
+									
+									
+									<tr>
+
+										<th>'.__('Refund e-mail subject for Payer', 'row_seats').':</th>
+
+										<td>
+
+											<input type="text" id="rst_refund_email_subject" name="rst_refund_email_subject" value="'.stripslashes(htmlspecialchars($rst_options['rst_refund_email_subject'], ENT_QUOTES)).'" class="widefat">
+
+											<br /><em>'.__('In case of refund payment, your customers receive e-mail message about that. This is subject field of the message.', 'row_seats').'</em>
+
+										</td>
+
+									</tr>
+
+									<tr>
+
+										<th>'.__('Refund  e-mail body for Payer', 'row_seats').':</th>
+
+										<td>
+
+											<textarea id="rst_refund_email_body" name="rst_refund_email_body" style="height: 120px;" class="widefat">'.stripslashes(htmlspecialchars($rst_options['rst_refund_email_body'], ENT_QUOTES)).'</textarea>
+
+											<br /><em>'.__('This e-mail message is sent to your customers in case of Refund payment. You can use the following keywords: {payer_name}, {payer_email}, {payment_status}.', 'row_seats').'</em>
+
+										</td>
+
+									</tr>																		
+									
+									<tr>
 
 										<th>'.__('Offline payment pending notification e-mail subject for Payer', 'row_seats').':</th>
 

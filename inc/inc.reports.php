@@ -32,16 +32,66 @@ if(isset($_REQUEST['ctxnid']))
             $booking_details = $wpdb->get_results($sql, ARRAY_A);
             $data = $booking_details;
 			$txn_id=$data[0]['txn_id'];
-			//print "<br><br>--------------".$txn_id;
+			$booking_id=$data[0]['booking_id'];
+			$show_name = addslashes($data[0]['show_name']);
+			$show_date= $data[0]['show_date'];
+			$booking_details5 = $data[0]['booking_details'];
+			$ticketno = $rst_options['rst_ticket_prefix'] . $_POST['x_invoice_num'];
+			$booking_details5 = unserialize($booking_details5);
+			$ticket_seat_no=array();			
+			for ($row = 0; $row < count($booking_details5); $row++) {
+					$seats = $booking_details5[$row]['seatno'];
+					$showid = $booking_details5[$row]['show_id'];
+					$rowname = $booking_details5[$row]['row_name'];
+					$price = $booking_details5[$row]['price'];
+					$ticket_seat_no[]=$rowname . $seats;	
+				}
+				$ticket_seat_no=implode(",",$ticket_seat_no);
 			
+        $sql2 = "select * from rst_payment_transactions  where tx_str  ='" . $booking_id."'";
+		//print $sql2;
+   $offflinep="no";
+        if ($results2 = $wpdb->get_results($sql2, ARRAY_A)) {
+            $booking_details2 = $wpdb->get_results($sql2, ARRAY_A);
+            $data2 = $booking_details2;		
+			//print_r($data2);
+			//exit;
+$payer_name=$data2[0]['payer_name'];
+$payer_offlinepayment=$data2[0]['payer_email'];
+$payment_status=$data2[0]['transaction_type']	;
+
+$gross_total =$data2[0]['gross']	;	
+			
+			if($data2[0]['transaction_type']=='Offline Payment:Not Paid')
+			{
+              $offflinep="yes"; 
+			}
+			
+
+		}		
+			
+			//print "<br><br>--------------".$txn_id;
+		if($offflinep=="yes")
+		{			
+					$tags = array('{payer_name}', '{payer_email}', '{payment_status}', '{show_name}', '{show_date}', '{seats}','{amount}');
+					$vals = array($payer_name, $payer_offlinepayment, $payment_status,$show_name ,$show_date,$ticket_seat_no,$gross_total );
+					$body = str_replace($tags, $vals, get_option('rst_pending_email_body'));
+					$mail_headers = "Content-Type: text/plain; charset=utf-8\r\n";
+					$mail_headers .= "From: ".get_option('rst_from_name')." <".get_option('rst_from_email').">\r\n";
+					$mail_headers .= "X-Mailer: PHP/".phpversion()."\r\n";
+					wp_mail(/*$email*/$payer_offlinepayment, get_option('rst_pending_email_subject'), $body, $mail_headers);	
+		}else{
+					
 			if($txn_id)
 			{
             sendrstmail($data, $txn_id);
 			}
+		}
 
         }
 
 }
+
 
 if(isset($_REQUEST['Update']))
 {
@@ -641,9 +691,29 @@ $alldata = bookedticketssearch($_REQUEST['keywords']);
 
 
         // $data = mass_project_operations('list','','','','');
-
+$oldtx="";
+$j=1;
         for ($i = 0; $i < count($alldata); $i++) {
             $data = $alldata[$i];
+			
+
+			//$alldata[$i]['ticket_seat_no'] ="GA";
+			//print_r($alldata[$i]);
+			
+			      if($oldtx==$alldata[$i]['txn_id'])
+				  {					  
+					  $j++;
+				  }else
+				  {
+					$j=1;  
+					
+					  
+				  }
+				  $oldtx=$alldata[$i]['txn_id'];	
+			
+				   $seattitle = $alldata[$i]['ticket_seat_no'];
+		           $seattitle = apply_filters('row_seats_generel_admission_hideticketnumber', $seattitle,$j,$alldata[$i]['show_id']);
+				   $alldata[$i]['ticket_seat_no'] =$seattitle;
 
             if ($alldata[$i]['fees'] != '')
                 $alldata[$i]['fees'] = $symbol . $alldata[$i]['fees'];
@@ -651,7 +721,7 @@ $alldata = bookedticketssearch($_REQUEST['keywords']);
             $tranid = $data['txn_id'];
             $txn_id = base64_decode($alldata[$i]['txn_id']);
             //echo $alldata[$i]['txn_id'];
-            $txn_id = split('-', $txn_id);
+            $txn_id = explode('-', $txn_id);
             if (count($txn_id) > 1) {
                 $alldata[$i]['txn_id'] = $txn_id[0];
             } else {

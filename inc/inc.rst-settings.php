@@ -441,6 +441,7 @@ if ($rst_options['rst_idle_message'] == '') {
         </table>
 <?php echo apply_filters('rowseats-userregistration-settings-hidden',''); ?>
 <?php echo apply_filters('rowseats-generel_admission-settings-hidden',''); ?>
+<?php echo apply_filters('rowseats-table-settings-hidden',''); ?>
 
     </form>
 

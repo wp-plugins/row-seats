@@ -177,6 +177,13 @@ jQuery(document).ready(function () {
                     },
 
                     "delete": function () {
+						
+						var r = confirm("Are you sure you want to delete the show!");
+						if (r == true) {							
+						}else
+						{							
+							return false;
+						}						
 
                         jQuery.post(RSTAJAXURL,
 

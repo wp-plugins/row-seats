@@ -11,15 +11,10 @@ if (!session_id())
 /*
 
 Plugin Name: Row Seats Core
-
 Plugin URI: http://www.rowseatsplugin.com
-
-Description: Booking seats is easier with Row Seats plugin.This is a new solution to the increasing request to sell seats.It features shopping cart features, calendar backend function, csv file upload of your seat details. It also handles special seating such as handicap accessability. Just place the shortcode in a page or post and sell your show.
-
-Version: 2.44
-
+Description: Booking seats is easier with Row Seats plugin. It features shopping cart, calendar backend function, csv file upload of your seat plan details. Just place the shortcode in a page or post and sell your show.
+Version: 2.54
 Author: GC GROUP
-
 Author URI: http://www.rowseatsplugin.com
 
 */
@@ -70,7 +65,7 @@ else
 
     $scheme = 'http';
 
-define('RSTAJAXURL', home_url('/wp-admin/admin-ajax.php', $scheme));
+define('RSTAJAXURL', site_url('/wp-admin/admin-ajax.php', $scheme));
 
 $wpdb->rst_shows = 'rst_shows';
 

@@ -275,6 +275,8 @@ function wp_row_seats_signup_call()
 			
 	}	
 	
+$event_seat=apply_filters('row_seats_table_titlechange',$event_seat,$showid);	
+	
 	
     $symbol = $rst_paypal_options['currencysymbol'];
 	$symbol = get_option('rst_currencysymbol');
@@ -289,9 +291,9 @@ function wp_row_seats_signup_call()
         "6" => "&#8377;",
         "7" => "R$",
         "8" => "kr",
-        "9" => "zł",
+        "9" => "zl",
         "10" => "Ft",
-        "11" => "Kč",
+        "11" => "Kc",
         "12" => "&#1088;&#1091&#1073;",
         "13" => "&#164;",
         "14" => "&#x20B1;",
@@ -369,6 +371,8 @@ $errors= apply_filters('row_seats_custom_field_error',$errors);
 							'value' => $_POST["contact_phone"]
 						)
 					);	
+					
+			$checkout_summary= apply_filters('row_seats_custom_field_preview',$checkout_summary);		
 			//Select offline mode if Admin or if there is no active payment		
 			if($_POST['payment_method']=="offlinepayment_force")
 			{	
@@ -402,7 +406,9 @@ $errors= apply_filters('row_seats_custom_field_error',$errors);
 	
 			$subtotal=0; 		
 			for ($i = 0; $i < count($cartitems); $i++) {
-				$name ="Seat:".$cartitems[$i]['row_name'] . $cartitems[$i]['seatno'];
+				$seattitle = $cartitems[$i]['row_name'] . $cartitems[$i]['seatno'];
+				$seattitle = apply_filters('row_seats_generel_admission_hideticketnumber', $seattitle,$i+1,$showid);
+				$name ="".$event_seat.":".$seattitle;
 				$mytseats[]=$cartitems[$i]['row_name'] . $cartitems[$i]['seatno'];
 				$price=$cartitems[$i]['price'];
 				if($rst_options['rst_enable_special_pricing']=="on" and row_seats_special_pricing_verification())
@@ -411,7 +417,7 @@ $errors= apply_filters('row_seats_custom_field_error',$errors);
 					$name.=" - ".$myproductsarraytemp[0];
 					$price=$myproductsarraytemp[1];
 				}
-$itesmname=$eventname1." Seat:".$cartitems[$i]['row_name'] . $cartitems[$i]['seatno'];		
+$itesmname=$eventname1." ".$event_seat.":".$cartitems[$i]['row_name'] . $cartitems[$i]['seatno'];		
 $myitems[]=array('name'=>$itesmname,'price'=>$price);			
 	
 				$subtotal+=$price;
@@ -813,7 +819,7 @@ $seatsize=0;
     if ($divwidth < $mindivwidth) {
         $divwidth = $mindivwidth;
     }
-	
+	$style1="margin:auto";////khyati code for alignment
 	if($rst_options['rst_fixed_width'])
 	{
 	$divwidth =$rst_options['rst_fixed_width'];
@@ -821,27 +827,45 @@ $seatsize=0;
 
     if ($rst_options['rst_alignment'] == 3) {
         $style = 'margin-left: auto;';
+        if($rst_options['rst_zoom']== 0.7){
+        	$style1="margin-right: 100px;";//khyati code for alignment if zoom 70%
+        }else{
+        	$style1="float:none";//khyati code
+        }
+        	echo '<style>ul.r{float:right;}</style>';//khyati code for alignment
     }
 
     if ($rst_options['rst_alignment'] == 2) {
         $style = 'margin-right: auto;';
+        $style1="float:left";//khyati code
+        	echo '<style>ul.r{float:left;}</style>';//khyati code for alignment
     }
 
     if ($rst_options['rst_alignment'] == 1) {
         $style = 'margin: auto;';
+        echo '<style>ul.r{float:none;}</style>';//khyati code for alignment
     }
-
 	
-	
+$divwidth=apply_filters('row_seats_table_divwidth',$divwidth,$showid['id']);	
 	
     ?>
-<!--Row Seats v2.44 starts-->
-   
+<!--Row Seats v2.54 starts-->
+   <meta http-equiv='Content-Type' content='text/html; charset=ISO-8859-1'>
     <div style="width: <?php echo $divwidth;?>px; <?php echo $style; ?>">
 <?php
 apply_filters('rowseats-addtocalendar-js',$showdata);
-
+//khyati code for alignment and zoom
 ?>	
+<style>
+   	
+	<?php if($rst_options['rst_zoom']==0.6){ echo ".stage-hdng,.cartitems{width:100% !important; margin:15px 0px;}.main_seats{width:100%; ". $style1.";}";}
+   if($rst_options['rst_zoom']==0.7){ echo ".stage-hdng,.cartitems{width:100% !important; margin:15px 0px;}.main_seats{width:100%; ". $style1.";}";}
+	if($rst_options['rst_zoom']==0.8){ echo ".stage-hdng,.cartitems{width:100% !important; margin:15px 0px;}.main_seats{width:100%; ". $style1.";}";}
+	if($rst_options['rst_zoom']==0.9){ echo ".stage-hdng,.cartitems{width:100% !important; margin:15px 0px;}.main_seats{width:100%; ". $style1.";}";}
+	if($rst_options['rst_zoom']==1){ echo ".stage-hdng,.cartitems{width:100% !important; margin:15px 0px;}.main_seats{width:100%; ". $style1.";}";}
+	//khyati code for alignment and zoom END::
+	?>
+	</style>
 	
     <script type="text/javascript">
         var RSTPLN_CKURL = '<?php echo RSTPLN_CKURL?>';
@@ -859,7 +883,7 @@ apply_filters('rowseats-addtocalendar-js',$showdata);
     ?>
    
     
-    <link rel="stylesheet" type="text/css" media="all" href="<?php echo RSTPLN_CSSURL . $stylecss ?>"/>
+    <link rel="stylesheet" type="text/css" media="all" href="<?php echo RSTPLN_CSSURL . $stylecss.'?time='.$showid['id']; ?>"/>
 	<link rel="stylesheet" type="text/css" media="all" href="<?php echo RSTPLN_CSSURL . 'common.css' ?>"/>
  
 
@@ -876,8 +900,10 @@ $seatsize=0;
 
 ?> 
     <style>
-
-	
+/*khyati code: for rows padding and margin */
+	ul.r{
+		display:table-cell;
+	}
 	
 	
 
@@ -886,14 +912,23 @@ ul.r li {
 
 
     font-size: <?php echo (int)(10 * $rst_options['rst_zoom']);?>px !important;
+height:<?php echo (int)(24 * $rst_options['rst_zoom']); ?>px !important;
+    width:<?php echo (int)((21+$seatsize) * $rst_options['rst_zoom']); ?>px !important;
 
-    height: <?php echo (int)(24 * $rst_options['rst_zoom']);?>px !important;
 
     line-height: <?php echo (int)(24 * $rst_options['rst_zoom']);?>px !important;
 
 
-    width: <?php echo (int)((21+$seatsize) * $rst_options['rst_zoom']);?>px !important;
 
+
+<?php
+
+$width=(int)((21+$seatsize) * $rst_options['rst_zoom']);
+$height=(int)(21 * $rst_options['rst_zoom']);
+
+apply_filters('row_seats_table_form','width: '.$width.'px !important;height: '.$height.'px !important;',$width,$height,$showid['id']);
+
+?>
 
 
   
@@ -906,12 +941,17 @@ ul.r li {
 
 <?php
 apply_filters('row_seats_color_selection_css',$showid['id']);
+
+		//wp_register_script('jquery.cookie.js', RSTPLN_COKURL . 'jquery.cookie.js', array('jquery'));
+		//wp_enqueue_script('jquery.cookie.js');
+		
+		
 ?>
 
-    <script type='text/javascript' src='<?php echo RSTPLN_COKURL ?>jquery.cookie.js'></script>
+  <script type='text/javascript' src='<?php echo RSTPLN_COKURL ?>jquery.cookie.js'></script>
    <!-- <script type="text/javascript" src="<?php echo RSTPLN_IDLKURL ?>jquery.countdown.js"></script>
     <script type="text/javascript" src="<?php echo RSTPLN_IDLKURL ?>idle-timer.js"></script>-->
- <?
+ <?php
 wp_enqueue_script('jquery');
 ?> 
     <!--<link rel="stylesheet" type="text/css" media="all" href="<?php echo RSTPLN_IDLKURL ?>jquery.countdown.css"/>-->
@@ -934,6 +974,11 @@ wp_enqueue_script('jquery');
     $venue = $showdata['venue'];
     $eventdate = $showdata['show_start_time'];
     $eventdate = date('Y-m-d H:i:s', strtotime($showdata['show_start_time']));
+	
+$daten = date('Y-m-d', strtotime($showdata['show_start_time']));
+$timen = date('H:i:s', strtotime($showdata['show_start_time']));
+$eventdate = date(get_option('date_format'), strtotime($daten)). ' ' .date(get_option('time_format'), strtotime($timen));	
+	
     $eventdate1 = strtotime($eventdate);
     $currentdate = strtotime(current_time('mysql', 0));
     $eventdate1 = $eventdate1 - (60 * $closebooking);
@@ -1008,10 +1053,15 @@ echo '<div><br/><strong>'.$rstidlemsg.'</strong></div></div><br>';
         $html = '';
 
 
+		$divwidth=apply_filters('row_seats_table_divwidth',$divwidth,$showid);
+		
         // showcart ----->
-        $html .= "<a name='show_top'></a><div class='showchart'><div style='width:".$divwidth."px; margin: 0 auto;'><div class='showchart paymentsucess'>$paymentsuccess</div>
+        $html .= "<a name='show_top'></a><div class='showchart'><div style='width:".$divwidth."px; margin: 0 auto;'><div class='showchart paymentsucess'>$paymentsuccess</div>";
 
-        <div style='float:left;color:#f21313;'>$event_empty_warning &nbsp;&nbsp;</div>
+		$html .= apply_filters('row_seats_generel_admission_form','',$showid);
+		$html .= apply_filters('rowseats-addtocalendar-showbutton','',$showdata);		
+		
+        $html .= "<div style='float:left;color:#f21313;'>$event_empty_warning &nbsp;&nbsp;</div>
 
         <div id='defaultCountdown' ></div>
         <div id='idleCountdown' style='display: none;'></div>
@@ -1026,8 +1076,8 @@ echo '<div><br/><strong>'.$rstidlemsg.'</strong></div></div><br>';
 
         </div></div></div>";
         // <----- showcart
-		apply_filters('row_seats_generel_admission_form',$showid);
-		apply_filters('rowseats-addtocalendar-showbutton',$showdata);
+		//apply_filters('row_seats_generel_admission_form',$showid);
+		//apply_filters('rowseats-addtocalendar-showbutton',$showdata);
         $html .= "<div id='showprview' class='localcss' align='center' style='width:100%; margin-left: auto;margin-right: auto;' >";
 
 		
@@ -2914,7 +2964,7 @@ global $screenspacing,$wpdb;
 		}		
 	}
 
-
+$event_seat=apply_filters('row_seats_table_titlechange',$event_seat,$showid);
 	
 	
 
@@ -2931,9 +2981,9 @@ $symbol = get_option('rst_currencysymbol');
         "6" => "&#8377;",
         "7" => "R$",
         "8" => "kr",
-        "9" => "zł",
+        "9" => "zl",
         "10" => "Ft",
-        "11" => "Kč",
+        "11" => "Kc",
         "12" => "&#1088;&#1091&#1073;",
         "13" => "&#164;",
         "14" => "&#x20B1;",
@@ -2981,7 +3031,7 @@ $seatsize=0;
     $sessiondata = base64_encode($sessiondata);
 
     $rst_bookings = unserialize($rst_bookings);
-
+	$divwidth=apply_filters('row_seats_table_divwidth',$divwidth,$showid);
     $html = '<div class="seatplan" id="showid_' . $showid . '" style="width:' . $divwidth . 'px;">';
 
     $nextrow = '';
@@ -3076,23 +3126,41 @@ $circle[$nofsets+$z]=$event_circle[$z];
         $seatcost = $data['seat_price'];
 
         $seatdiscost = $data['discount_price'];
-
+        $hide_row = $rst_options['row_seats_table_hiderow_'.$showid];
         if ($i == 0) {
 
             if ($rowname == '') {
-                $html .= '<div style="float:left;"><ul class="r"><li class="stall showseats">' . $rowname . '</li>';
+                $html .= '<div style="clear:both;"><ul class="r"><li class="stall showseats">' . $rowname . '</li>';
             } else {
-                $html .= '<div style="float:left;"><ul class="r"><li class="ltr">' . $rowname . '</li>';
+              //check hide row is on or not khyati
+            	if($hide_row == 'on'){
+                $html .= '<div style="clear:both;"><ul class="r"><li class="ltr"></li>';
+              }else{
+                $html .= '<div style="clear:both;"><ul class="r"><li class="ltr">' . $rowname . '</li>';
+              }
             }
         }
         if ($nextrow != $rowname && $i != 0) {
             if ($rowname == '') {
-                $html .= '<li class="ltr">' . $nextrow . '</li></ul></div><div style="float:left;"><ul class="r"><li class="stall showseats">' . $rowname . '</li>';
+            	if($hide_row == 'on'){
+                    $html .= '<li class="ltr"></li></ul></div><div style="clear:both;"><ul class="r"><li class="stall showseats"></li>';
+                  }else{
+                    $html .= '<li class="ltr">' . $nextrow . '</li></ul></div><div style="clear:both;"><ul class="r"><li class="stall showseats">' . $rowname . '</li>';
+                  }
             } else {
                 if ($nextrow == '') {
-                    $html .= '<li class="stall showseats">' . $nextrow . '</li></ul></div><div style="float:left;"><ul class="r"><li class="ltr">' . $rowname . '</li>';
+                	if($hide_row == 'on'){
+                    $html .= '<li class="stall showseats"></li></ul></div><div style="clear:both;"><ul class="r"><li class="ltr"></li>';
+                  }else{
+                    $html .= '<li class="stall showseats">' . $nextrow . '</li></ul></div><div style="clear:both;"><ul class="r"><li class="ltr">' . $rowname . '</li>';
+                  }
                 } else {
-                    $html .= '<li class="ltr">' . $nextrow . '</li></ul></div><div style="float:left;"><ul class="r"><li class="ltr">' . $rowname . '</li>';
+                  //check hide row is on or not khyati
+                	if($hide_row == 'on'){
+                    $html .= '<li class="ltr"></li></ul></div><div style="clear:both;"><ul class="r"><li class="ltr"></li>';
+                  }else{
+                    $html .= '<li class="ltr">' . $nextrow . '</li></ul></div><div style="clear:both;"><ul class="r"><li class="ltr">' . $rowname . '</li>';
+                  }
                 }
 
             }
@@ -3121,23 +3189,24 @@ $circle[$nofsets+$z]=$event_circle[$z];
 
 		$cssclassname="notbooked";
 		$cssclassname=apply_filters('row_seats_color_selection_css_name',$cssclassname,$data['seatcolor']);
-		
-		
+		$mouseovertitle=$event_seat.' ' . $rowname . ($seatno);
+		$mouseovertitle=apply_filters('row_seats_color_table_mousever',$mouseovertitle,$seatno,$showid);
+//print $mouseovertitle;		
         if ($data['seattype'] == 'N') {
 
-            $html .= '<li class="un showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$event_seat.' ' . $rowname . ($seatno) . ' Unavailable" rel="' . $data['seattype'] . '"></li>';
+            $html .= '<li class="un showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$mouseovertitle . ' Unavailable" rel="' . $data['seattype'] . '"></li>';
 
         } else if ($data['seattype'] == 'Y') {
 
-            $html .= '<li class="'.$cssclassname.' showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$event_seat.' ' . $rowname . ($seatno) . ' '.$event_price.' ' . $symbol . $seatcost . ' '.$event_seat_available.'" rel="' . $data['seattype'] . '">' . ($seatno) . '</li>';
+            $html .= '<li class="'.$cssclassname.' showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$mouseovertitle . ' '.$event_price.' ' . $symbol . $seatcost . ' '.$event_seat_available.'" rel="' . $data['seattype'] . '">' . ($seatno) . '</li>';
 
         } else if ($data['seattype'] == 'H') {
 
-            $html .= '<li class="handy showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$event_seat.' ' . $rowname . ($seatno) . ' '.$event_seat_handicap.' ' . $symbol . $dicount . ' " rel="' . $data['seattype'] . '">' . $seatno . '</li>';
+            $html .= '<li class="handy showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$mouseovertitle . ' '.$event_seat_handicap.' ' . $symbol . $dicount . ' " rel="' . $data['seattype'] . '">' . $seatno . '</li>';
 
         } else if ($data['seattype'] == 'B') {
 
-            $html .= '<li class="booked showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$event_seat.' ' . $rowname . ($seatno) . ' '.$event_seat_booked.'" rel="' . $data['seattype'] . '">' . $seatno . '</li>';
+            $html .= '<li class="booked showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$mouseovertitle . ' '.$event_seat_booked.'" rel="' . $data['seattype'] . '">' . $seatno . '</li>';
 
         } else if ($data['seattype'] == 'T') {
 
@@ -3153,11 +3222,11 @@ $circle[$nofsets+$z]=$event_circle[$z];
 
             if ($otherscart) {
 
-                $html .= '<li class="blocked showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$event_seat.' ' . $rowname . ($seatno) . '" rel="' . $data['seattype'] . '">' . $seatno . '</li>';
+                $html .= '<li class="blocked showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$mouseovertitle . '" rel="' . $data['seattype'] . '">' . $seatno . '</li>';
 
             } else {
 
-                $html .= '<li class="b showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$event_seat.' ' . $rowname . ($seatno) . '  '.$event_seat_blocked.'" rel="' . $data['seattype'] . '">' . $seatno . '</li>';
+                $html .= '<li class="b showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="'.$mouseovertitle . '  '.$event_seat_blocked.'" rel="' . $data['seattype'] . '">' . $seatno . '</li>';
 
             }
 
@@ -3183,7 +3252,12 @@ $circle[$nofsets+$z]=$event_circle[$z];
 
     }
 
-    $html .= '<li class="ltr">' . $nextrow . '</li></ul></div>';
+    //check hide row is on or not khyati
+if($hide_row == 'on'){
+    $html .= '<li class="ltr"></li></ul></div></div></div>';
+  }else{
+  	$html .= '<li class="ltr">' . $nextrow . '</li></ul></div></div></div>';
+  }
 $html = apply_filters('row_seats_generel_admission_block_seatchart', $html);
     return $html;
 
@@ -3596,6 +3670,7 @@ global $screenspacing,$wpdb;
 		}			
 }	
 
+$event_seat=apply_filters('row_seats_table_titlechange',$event_seat,$showid);
 
 
     ?>
@@ -3635,9 +3710,9 @@ global $screenspacing,$wpdb;
         "6" => "&#8377;",
         "7" => "R$",
         "8" => "kr",
-        "9" => "zł",
+        "9" => "zl",
         "10" => "Ft",
-        "11" => "Kč",
+        "11" => "Kc",
         "12" => "&#1088;&#1091&#1073;",
         "13" => "&#164;",
         "14" => "&#x20B1;",
@@ -3735,9 +3810,9 @@ apply_filters('row_seats_seat_restriction_js_filter','');
         "6" => "&#8377;",
         "7" => "R$",
         "8" => "kr",
-        "9" => "zł",
+        "9" => "zl",
         "10" => "Ft",
-        "11" => "Kč",
+        "11" => "Kc",
         "12" => "&#1088;&#1091&#1073;",
         "13" => "&#164;",
         "14" => "&#x20B1;",
@@ -3869,12 +3944,13 @@ function updateprice()
 						$special_pricing_array=row_seats_special_special_price_array($_SESSION['views'],$rst_booking['price']);
 					}	
 				}	
-
+$seattitle=$rst_booking['row_name'] . $rst_booking['seatno'];
+$seattitle = apply_filters('row_seats_generel_admission_hideticketnumber', $seattitle,$i+1,$_SESSION['views']);
 		?>
 
 
                 <tr>
-                    <td width=50%"><?php echo $event_seat;?>:<?php echo $rst_booking['row_name'] . $rst_booking['seatno'];?>-<?php echo $event_item_cost;?>:</td>
+                    <td width=50%"><?php echo $event_seat;?>:<?php echo $seattitle;?>-<?php echo $event_item_cost;?>:</td>
                     <td><table><tr><td><span style="color: maroon;font-size: small;"><?php echo $symbol;?></span><span style="color: maroon;font-size: small;" id="price<?php echo $i;?>"><?php echo $rst_booking['price'];?></span></td>
 					<td>
 					<?php
@@ -4212,6 +4288,7 @@ $payment_methods = apply_filters('row_seats_currency_payment_methods', $active_p
 
     </form>
     <div class="row_seats_confirmation_container" id="rsconfirmation_container2"></div>	
+	<div class="row_seats_confirmation_container" id="rsconfirmation_container3"></div>
 
 
 
@@ -4285,7 +4362,7 @@ $seatsize=0;
 	}
 $colorchat=apply_filters('row_seats_color_selection_css2',$colorchat,$showid);
 	
-
+$divwidth=apply_filters('row_seats_table_divwidth',$divwidth,$showid);
 
     $html .= '<div id="currentcart"><div style="width: '.$divwidth.'px;">'.$colorchat.'<span class="notbooked showseats" ></span><span class="show-text">'.$event_seat_available.'  </span>
 
@@ -4321,8 +4398,9 @@ $topheader='<div class="stage-hdng" style="margin-left: 0px; margin-top: 0px; ma
     }
 
     $foundcartitems = 0;
-
-    $html .= '<div class="seatplan" id="showid_' . $showid . '" style="width:' . $divwidth . 'px  !important;" >';
+	$divwidth=apply_filters('row_seats_table_divwidth',$divwidth,$showid);
+    //add main_seat div for zoom and alignment
+    $html .= '<div class="main_seats"><div class="seatplan" id="showid_' . $showid . '" style="width:' . $divwidth . 'px;">';
 
     $nextrow = '';
 
@@ -4418,23 +4496,42 @@ $circle[$nofsets+$z]=$event_circle[$z];
         $seatcost = $data['seat_price'];
 
         $seatdiscost = $data['discount_price'];
+        $hide_row = $rst_options['row_seats_table_hiderow_'.$showid];
 
         if ($i == 0) {
 
             if ($rowname == '') {
-                $html .= '<div style="float:left;"><ul class="r"><li class="stall showseats">' . $rowname . '</li>';
+                $html .= '<div style="clear:both;"><ul class="r"><li class="stall showseats">' . $rowname . '</li>';
             } else {
-                $html .= '<div style="float:left;"><ul class="r"><li class="ltr">' . $rowname . '</li>';
+                //check hide row is on or not khyati
+            	if($hide_row == 'on'){
+		    	       $html .= '<div style="clear:both;"><ul class="r"><li class="ltr"></li>';
+		          }else{
+		          	$html .= '<div style="clear:both;"><ul class="r"><li class="ltr">' . $rowname . '</li>';
+		          }
             }
         }
         if ($nextrow != $rowname && $i != 0) {
             if ($rowname == '') {
-                $html .= '<li class="ltr">' . $nextrow . '</li></ul></div><div style="float:left;"><ul class="r"><li class="stall showseats">' . $rowname . '</li>';
+            	if($hide_row == 'on'){
+                    $html .= '<li class="ltr"></li></ul></div><div style="clear:both;"><ul class="r"><li class="stall showseats"></li>';
+                  }else{
+                  	$html .= '<li class="ltr">' . $nextrow . '</li></ul></div><div style="clear:both;"><ul class="r"><li class="stall showseats">' . $rowname . '</li>';
+                  }
             } else {
                 if ($nextrow == '') {
-                    $html .= '<li class="stall showseats">' . $nextrow . '</li></ul></div><div style="float:left;"><ul class="r"><li class="ltr">' . $rowname . '</li>';
+                if($hide_row == 'on'){
+                    $html .= '<li class="stall showseats"></li></ul></div><div style="clear:both;"><ul class="r"><li class="ltr"></li>';
+                  }else{
+                  	$html .= '<li class="stall showseats">' . $nextrow . '</li></ul></div><div style="clear:both;"><ul class="r"><li class="ltr">' . $rowname . '</li>';
+                  }
                 } else {
-                    $html .= '<li class="ltr">' . $nextrow . '</li></ul></div><div style="float:left;"><ul class="r"><li class="ltr">' . $rowname . '</li>';
+                    //check hide row is on or not khyati
+                	if($hide_row == 'on'){
+                    $html .= '<li class="ltr"></li></ul></div><div style="clear:both;"><ul class="r"><li class="ltr"></li>';
+                  }else{
+                  	$html .= '<li class="ltr">' . $nextrow . '</li></ul></div><div style="clear:both;"><ul class="r"><li class="ltr">' . $rowname . '</li>';
+                  }
                 }
 
             }
@@ -4467,23 +4564,26 @@ $circle[$nofsets+$z]=$event_circle[$z];
 
 		$cssclassname="notbooked";
 		$cssclassname=apply_filters('row_seats_color_selection_css_name',$cssclassname,$data['seatcolor']);
+
+		$mouseovertitle='Seat ' . $rowname . ($seatno);
+		$mouseovertitle=apply_filters('row_seats_color_table_mousever',$mouseovertitle,$seatno,$showid);
 		
 
         if ($data['seattype'] == 'N') {
 
-            $html .= '<li class="un showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="Seat ' . $rowname . ($seatno) . ' Unavailable" rel="' . $data['seattype'] . '"></li>';
+            $html .= '<li class="un showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="' . $mouseovertitle . ' Unavailable" rel="' . $data['seattype'] . '"></li>';
 
         } else if ($data['seattype'] == 'Y') {
 
-            $html .= '<li class="'.$cssclassname.' showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="Seat ' . $rowname . ($seatno) . ' Price ' . $symbol . $seatcost . ' Available" rel="' . $data['seattype'] . '">' . ($seatno) . '</li>';
+            $html .= '<li class="'.$cssclassname.' showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="' .$mouseovertitle . ' Price ' . $symbol . $seatcost . ' Available" rel="' . $data['seattype'] . '">' . ($seatno) . '</li>';
 
         } else if ($data['seattype'] == 'H') {
 
-            $html .= '<li class="handy showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="Seat ' . $rowname . ($seatno) . ' Discount Price ' . $symbol . $dicount . ' " rel="' . $data['seattype'] . '">' . $seatno . '</li>';
+            $html .= '<li class="handy showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="' .$mouseovertitle. ' Discount Price ' . $symbol . $dicount . ' " rel="' . $data['seattype'] . '">' . $seatno . '</li>';
 
         } else if ($data['seattype'] == 'B') {
 
-            $html .= '<li class="booked showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="Seat ' . $rowname . ($seatno) . ' Booked" rel="' . $data['seattype'] . '">' . $seatno . '</li>';
+            $html .= '<li class="booked showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="' .$mouseovertitle. ' Booked" rel="' . $data['seattype'] . '">' . $seatno . '</li>';
 
         } else if ($data['seattype'] == 'T') {
 
@@ -4501,11 +4601,11 @@ $circle[$nofsets+$z]=$event_circle[$z];
 
                 $foundcartitems++;
 
-                $html .= '<li class="blocked showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="Seat ' . $rowname . ($seatno) . '" rel="' . $data['seattype'] . '">' . $seatno . '</li>';
+                $html .= '<li class="blocked showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="' . $mouseovertitle . '" rel="' . $data['seattype'] . '">' . $seatno . '</li>';
 
             } else {
 
-                $html .= '<li class="b showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="Seat ' . $rowname . ($seatno) . '  Blocked" rel="' . $data['seattype'] . '">' . $seatno . '</li>';
+                $html .= '<li class="b showseats" id="' . $showname . '_' . $showid . '_' . $rowname . '_' . $seatno . '_' . $seatno . '" title="' . $mouseovertitle . '  Blocked" rel="' . $data['seattype'] . '">' . $seatno . '</li>';
 
             }
 
@@ -4546,10 +4646,15 @@ $circle[$nofsets+$z]=$event_circle[$z];
     }
 	
 	
-    $html .= '<li class="ltr">' . $nextrow . '</li></ul></div>';
+    //check hide row is on or not khyati
+	if($hide_row == 'on'){
+    $html .= '<li class="ltr"></li></ul></div>';
+  }else{
+  	$html .= '<li class="ltr">' . $nextrow . '</li></ul></div>';
+  }
 
 	
-    $html .= '</div>';
+    $html .= '</div></div>';// add </div> by khyati
 //$html="";
 $html = apply_filters('row_seats_generel_admission_block_seatchart', $html);
     // cartitems ----->
@@ -4569,8 +4674,12 @@ $bottomheader='<br><br><br><br><div class="stage-hdng" style="width:' . $divwidt
             $rst_booking = $rst_bookings[$i];
 
             $rst_booking['price'] = number_format($rst_booking['price'], 2, '.', '');
+			$seattitle=$event_seat_row.' ' . $rst_booking['row_name'] .' - '.$event_seat.' '. ($rst_booking['seatno']) ;
+			
+			$seattitle = apply_filters('row_seats_generel_admission_hideticketnumber', $seattitle,$i+1,$showid);
+			$seattitle=apply_filters('row_seats_color_table_mousever',$seattitle,$rst_booking['seatno'],$showid);
 
-            $html .= '<tr><td>'.$event_seat_row.' ' . $rst_booking['row_name'] .' - '.$event_seat.' '. ($rst_booking['seatno']) . ' '.$languages_added.' - </td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>'.$event_item_cost.':' . $symbol . $rst_booking['price'] . '</td><td><img src="' . RSTPLN_URL . 'images/delete.png" class="deleteitem" id="' . $showname . '_' . $showid . '_' . $rst_booking['row_name'] . '_' . ($rst_booking['seatno']) . '" onclick="deleteitem(this);" style="cursor:pointer;border:none!important"/></td></tr>';
+            $html .= '<tr><td>'.$seattitle. ' '.$languages_added.' - </td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>'.$event_item_cost.':' . $symbol . $rst_booking['price'] . '</td><td><img src="' . RSTPLN_URL . 'images/delete.png" class="deleteitem" id="' . $showname . '_' . $showid . '_' . $rst_booking['row_name'] . '_' . ($rst_booking['seatno']) . '" onclick="deleteitem(this);" style="cursor:pointer;border:none!important"/></td></tr>';
 
             $total = $total + $rst_booking['price'];
         //$html .= var_dump($rst_booking);
@@ -4899,9 +5008,9 @@ global $screenspacing,$wpdb;
         "6" => "&#8377;",
         "7" => "R$",
         "8" => "kr",
-        "9" => "zł",
+        "9" => "zl",
         "10" => "Ft",
-        "11" => "Kč",
+        "11" => "Kc",
         "12" => "&#1088;&#1091&#1073;",
         "13" => "&#164;",
         "14" => "&#x20B1;",
@@ -4975,6 +5084,9 @@ $seatsize=0;
 
 	
     $html='<style>
+    ul.r{
+		display:inline-flex;
+	}
 ul.r li {
     font-size:'. (int)(10 * $rst_options['rst_zoom']).'px !important;
     height:'. (int)(24 * $rst_options['rst_zoom']).'px !important;
@@ -4999,6 +5111,8 @@ ul.r li {
         <span class="handy showseats" >&nbsp;&nbsp;&nbsp;&nbsp;</span> Wheelchair Access&nbsp;&nbsp;<br/><br/>
 
         <div id="stageshow"></div></div><div class="clear"></div>';
+		
+		$divwidth=apply_filters('row_seats_table_divwidth',$divwidth,$showid);
 
     $html .= '<div class="seatplan" id="showid_' . $showid . '" style="width:' . $divwidth . 'px;" >';
 
@@ -5064,22 +5178,41 @@ ul.r li {
         $seatcost = $data['seat_price'];
 
         $seatdiscost = $data['discount_price'];
+        $hide_row = $rst_options['row_seats_table_hiderow_'.$showid];
         if ($i == 0) {
             if ($rowname == '') {
-                $html .= '<div style="float:left;"><ul class="r"><li class="stall showseats">' . $rowname . '</li>';
+            	if($hide_row == 'on'){
+                $html .= '<div style="clear:both;"><ul class="r"><li class="stall showseats"></li>';
+              }else{
+                $html .= '<div style="clear:both;"><ul class="r"><li class="stall showseats">' . $rowname . '</li>';
+              }
             } else {
-                $html .= '<div style="float:left;"><ul class="r"><li class="ltr">' . $rowname . '</li>';
+                //check hide row is on or not khyati
+            	if($hide_row == 'on'){
+                $html .= '<div style="clear:both;"><ul class="r"><li class="ltr"></li>';
+              }else{
+                $html .= '<div style="clear:both;"><ul class="r"><li class="ltr">' . $rowname . '</li>';
+              }
             }
 
         }
         if ($nextrow != $rowname && $i != 0) {
             if ($rowname == '') {
-                $html .= '<li class="ltr">' . $nextrow . '</li></ul></div><div style="float:left;"><ul class="r"><li class="stall showseats">' . $rowname . '</li>';
+                $html .= '<li class="ltr">' . $nextrow . '</li></ul></div><div style="clear:both;"><ul class="r"><li class="stall showseats">' . $rowname . '</li>';
             } else {
                 if ($nextrow == '') {
-                    $html .= '<li class="stall showseats">' . $nextrow . '</li></ul></div><div style="float:left;"><ul class="r"><li class="ltr">' . $rowname . '</li>';
+                	if($hide_row == 'on'){
+                    $html .= '<li class="stall showseats">' . $nextrow . '</li></ul></div><div style="clear:both;"><ul class="r"><li class="ltr"></li>';
+                  }else{
+                    $html .= '<li class="stall showseats">' . $nextrow . '</li></ul></div><div style="clear:both;"><ul class="r"><li class="ltr">' . $rowname . '</li>';
+                  }
                 } else {
-                    $html .= '<li class="ltr">' . $nextrow . '</li></ul></div><div style="float:left;"><ul class="r"><li class="ltr">' . $rowname . '</li>';
+                    //check hide row is on or not khyati
+                	if($hide_row == 'on'){
+                    $html .= '<li class="ltr"></li></ul></div><div style="clear:both;"><ul class="r"><li class="ltr"></li>';
+                  }else{
+                    $html .= '<li class="ltr">' . $nextrow . '</li></ul></div><div style="clear:both;"><ul class="r"><li class="ltr">' . $rowname . '</li>';
+                  }
                 }
 
             }
@@ -5693,9 +5826,9 @@ $symbol = get_option('rst_currencysymbol');
         "6" => "&#8377;",
         "7" => "R$",
         "8" => "kr",
-        "9" => "zł",
+        "9" => "zl",
         "10" => "Ft",
-        "11" => "Kč",
+        "11" => "Kc",
         "12" => "&#1088;&#1091&#1073;",
         "13" => "&#164;",
         "14" => "&#x20B1;",
@@ -5714,13 +5847,13 @@ $symbol = get_option('rst_currencysymbol');
     $adminemailtemp = $rst_options['rst_adminetemp'];
 	$adminemailtemp = html_entity_decode(stripslashes(apply_filters( 'the_content', $adminemailtemp )));
 
-    $search = array("<username>", "<showname>", "<showdate>", "<bookedseats>", "<downloadlink>", "<showtime>","[username]", "[showname]", "[showdate]", "[bookedseats]", "[downloadlink]", "[showtime]");
+    $search = array("<username>", "<showname>", "<showdate>", "<bookedseats>", "<downloadlink>", "<showtime>", "<venue>","[username]", "[showname]", "[showdate]", "[bookedseats]", "[downloadlink]", "[showtime]", "[venue]");
 	
    // $downloadlink = RSTTICKETDOWNURL . '?id=' . $txn_id;
    $txn_id_enc=base64_encode($txn_id);
 	$downloadlink = get_bloginfo("wpurl"). '/?mybookingticket=' . $txn_id_enc;
     $dlink = 'Please click <a href="' . $downloadlink . '">here</a> to download your tickets';
-    $adminsearch = array("<blogname>", "<username>", "<showname>", "<showdate>", "<bookedseats>", "<availableseats>", "<showtime>", "<totalshowcount>", "<totalbookedcount>","[blogname]", "[username]", "[showname]", "[showdate]", "[bookedseats]", "[availableseats]", "[showtime]", "[totalshowcount]", "[totalbookedcount]");
+    $adminsearch = array("<blogname>", "<username>", "<showname>", "<showdate>", "<bookedseats>", "<availableseats>", "<showtime>", "<totalshowcount>", "<totalbookedcount>", "<venue>","[blogname]", "[username]", "[showname]", "[showdate]", "[bookedseats]", "[availableseats]", "[showtime]", "[totalshowcount]", "[totalbookedcount]", "[venue]");
     $adminsearch=apply_filters('row_seats_custom_field_shortcode_key',$adminsearch);
     $showid = $data[0]['show_id'];
 
@@ -5738,20 +5871,24 @@ $symbol = get_option('rst_currencysymbol');
     $showtime = date('jS \of F Y h:i:s A', strtotime($show_start_time));
 
     $showname = stripslashes($data[0]['show_name']);
+	$venue = stripslashes($data[0]['venue']);
 
     $seatdetails = '';
 
     for ($i = 0; $i < count($data); $i++) {
+		
+		$seattitle = $data[$i]['ticket_seat_no'] ;
+		$seattitle = apply_filters('row_seats_generel_admission_hideticketnumber', $seattitle,$i+1,$showid);
 
-        $seatdetails .= $data[$i]['ticket_seat_no'] . ' - ' . $symbol . $data[$i]['seat_cost'] . '<br/>';
+        $seatdetails .= $seattitle . ' - ' . $symbol . $data[$i]['seat_cost'] . '<br/>';
 
     }
 
-    $replace = array($username, $showname, $showdate, $seatdetails, $dlink,$showtime,$username, $showname, $showdate, $seatdetails, $dlink,$showtime);
+    $replace = array($username, $showname, $showdate, $seatdetails, $dlink,$showtime,$venue,$username, $showname, $showdate, $seatdetails, $dlink,$showtime,$venue);
 
     $blogname = get_option('blogname');
 
-    $adminreplace = array($blogname, $username, $showname, $showdate, $seatdetails, $availableseats,$showtime,$totalseats,$bookedseats,$blogname, $username, $showname, $showdate, $seatdetails, $availableseats,$showtime,$totalseats,$bookedseats);
+    $adminreplace = array($blogname, $username, $showname, $showdate, $seatdetails, $availableseats,$showtime,$totalseats,$bookedseats,$venue,$blogname, $username, $showname, $showdate, $seatdetails, $availableseats,$showtime,$totalseats,$bookedseats,$venue);
     $adminreplace=apply_filters('row_seats_custom_field_shortcode_value',$adminreplace,$data[0]['booking_id']); 
     $mailBodyText = str_replace($search, $replace, $useremailtemp);
 
@@ -5923,9 +6060,9 @@ $symbol = get_option('rst_currencysymbol');
         "6" => "&#8377;",
         "7" => "R$",
         "8" => "kr",
-        "9" => "zł",
+        "9" => "zl",
         "10" => "Ft",
-        "11" => "Kč",
+        "11" => "Kc",
         "12" => "&#1088;&#1091&#1073;",
         "13" => "&#164;",
         "14" => "&#x20B1;",
@@ -5944,13 +6081,13 @@ $symbol = get_option('rst_currencysymbol');
     $adminemailtemp = $rst_options['rst_adminetemp'];
 	$adminemailtemp = html_entity_decode(stripslashes(apply_filters( 'the_content', $adminemailtemp )));
 
-    $search = array("<username>", "<showname>", "<showdate>", "<bookedseats>", "<downloadlink>", "<showtime>","[username]", "[showname]", "[showdate]", "[bookedseats]", "[downloadlink]", "[showtime]");
+    $search = array("<username>", "<showname>", "<showdate>", "<bookedseats>", "<downloadlink>", "<showtime>", "<venue>","[username]", "[showname]", "[showdate]", "[bookedseats]", "[downloadlink]", "[showtime]", "[venue]");
 	
    // $downloadlink = RSTTICKETDOWNURL . '?id=' . $txn_id;
    $txn_id_enc=base64_encode($txn_id);
 	$downloadlink = get_bloginfo("wpurl"). '/?mybookingticket=' . $txn_id_enc;
     $dlink = 'Please click <a href="' . $downloadlink . '">here</a> to download your tickets';
-    $adminsearch = array("<blogname>", "<username>", "<showname>", "<showdate>", "<bookedseats>", "<availableseats>", "<showtime>","[blogname]", "[username]", "[showname]", "[showdate]", "[bookedseats]", "[availableseats]", "[showtime]");
+    $adminsearch = array("<blogname>", "<username>", "<showname>", "<showdate>", "<bookedseats>", "<availableseats>", "<showtime>", "<venue>","[blogname]", "[username]", "[showname]", "[showdate]", "[bookedseats]", "[availableseats]", "[showtime]", "[venue]");
 
     $showid = $data[0]['show_id'];
 
@@ -5960,7 +6097,7 @@ $symbol = get_option('rst_currencysymbol');
 
     $useremail = $data[0]['email'];
 
-    $showdate = $data[0]['show_date'];
+    $showdate = $data[0]['show_date'];	$venue = $data[0]['venue'];
 	$show_start_time = $data[0]['show_start_time'];
     $showdate = date('F j, Y', strtotime($showdate));
     $showtime = date('jS \of F Y h:i:s A', strtotime($show_start_time));
@@ -5970,15 +6107,17 @@ $symbol = get_option('rst_currencysymbol');
     $seatdetails = '';
 
     for ($i = 0; $i < count($data); $i++) {
+		$seattitle = $data[$i]['ticket_seat_no'];
+		$seattitle = apply_filters('row_seats_generel_admission_hideticketnumber', $seattitle,$i+1);
 
-        $seatdetails .= $data[$i]['ticket_seat_no'] . ' - ' . $symbol . $data[$i]['seat_cost'] . '<br/>';
+        $seatdetails .= $seattitle . ' - ' . $symbol . $data[$i]['seat_cost'] . '<br/>';
 
     }
 if($pstatus=='Pending')		
 {	
 	
-						$tags1 = array('{payer_name}', '{payer_email}', '{payment_status}', '{show_name}', '{show_date}', '{seats}','{amount}');
-						$vals1 = array($username, $username, $pstatus,$showname ,$showdate,$seatdetails,$gtotal );
+						$tags1 = array('{payer_name}', '{payer_email}', '{payment_status}', '{show_name}', '{show_date}', '{seats}','{amount}','{venue}','<venue>');
+						$vals1 = array($username, $username, $pstatus,$showname ,$showdate,$seatdetails,$gtotal ,$venue,$venue );
 						$pemailbody = html_entity_decode(stripslashes(apply_filters( 'the_content', get_option('rst_pending_email_body') )));
 						$body = str_replace($tags1, $vals1, $pemailbody);
 						//$mail_headers = "Content-Type: text/plain; charset=utf-8\r\n";
@@ -5988,11 +6127,11 @@ if($pstatus=='Pending')
 print $body;						
 }else
 {
-    $replace = array($username, $showname, $showdate, $seatdetails, $dlink,$showtime,$username, $showname, $showdate, $seatdetails, $dlink,$showtime);
+    $replace = array($username, $showname, $showdate, $seatdetails, $dlink,$showtime,$venue,$username, $showname, $showdate, $seatdetails, $dlink,$showtime,$venue);
 
     $blogname = get_option('blogname');
 
-    $adminreplace = array($blogname, $username, $showname, $showdate, $seatdetails, $availableseats,$showtime,$blogname, $username, $showname, $showdate, $seatdetails, $availableseats,$showtime);
+    $adminreplace = array($blogname, $username, $showname, $showdate, $seatdetails, $availableseats,$showtime,$venue,$blogname, $username, $showname, $showdate, $seatdetails, $availableseats,$showtime,$venue);
 
     $mailBodyText = str_replace($search, $replace, $useremailtemp);
 
@@ -6551,9 +6690,9 @@ function offline_payment_form_process() {
         "6" => "&#8377;",
         "7" => "R$",
         "8" => "kr",
-        "9" => "zł",
+        "9" => "zl",
         "10" => "Ft",
-        "11" => "Kč",
+        "11" => "Kc",
         "12" => "&#1088;&#1091&#1073;",
         "13" => "&#164;",
         "14" => "&#x20B1;",

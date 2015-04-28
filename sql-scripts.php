@@ -40,6 +40,8 @@ function rst_create_tables()
     );";
        // mysql_query($sql);
 		$wpdb->query($sql);
+		$sqla = "ALTER TABLE " . $wpdb->rst_booking_seats_relation . " CONVERT TO CHARACTER SET utf8 COLLATE utf8_unicode_ci";
+		$wpdb->query($sqla);
     }
 
     if ($wpdb->get_var("SHOW TABLES LIKE '$wpdb->rst_customer_session'") != $wpdb->rst_customer_session) {
@@ -58,6 +60,9 @@ function rst_create_tables()
     );";
         //mysql_query($sql);
 		$wpdb->query($sql);
+		$sqla = "ALTER TABLE " . $wpdb->rst_customer_session . " CONVERT TO CHARACTER SET utf8 COLLATE utf8_unicode_ci";
+		$wpdb->query($sqla);		
+		
     }
 
     if ($wpdb->get_var("SHOW TABLES LIKE '$wpdb->rst_bookings'") != $wpdb->rst_bookings) {
@@ -82,6 +87,9 @@ function rst_create_tables()
     );";
         //mysql_query($sql);
 		$wpdb->query($sql);
+			$sqla = "ALTER TABLE " . $wpdb->rst_bookings . " CONVERT TO CHARACTER SET utf8 COLLATE utf8_unicode_ci";
+		$wpdb->query($sqla);		
+		
     }
 
     if ($wpdb->get_var("SHOW TABLES LIKE '$wpdb->rst_shows'") != $wpdb->rst_shows) {
@@ -104,6 +112,9 @@ function rst_create_tables()
     );";
         //mysql_query($sql);
 		$wpdb->query($sql);
+			$sqla = "ALTER TABLE " . $wpdb->rst_shows . " CONVERT TO CHARACTER SET utf8 COLLATE utf8_unicode_ci";
+		$wpdb->query($sqla);		
+		
     }
 
     if ($wpdb->get_var("SHOW TABLES LIKE '$wpdb->rst_seats'") != $wpdb->rst_seats) {
@@ -130,6 +141,9 @@ function rst_create_tables()
 
         //mysql_query($sql);
 		$wpdb->query($sql);
+			$sqla = "ALTER TABLE " . $wpdb->rst_seats . " CONVERT TO CHARACTER SET utf8 COLLATE utf8_unicode_ci";
+		$wpdb->query($sqla);		
+		
     }
 	
     if ($wpdb->get_var("SHOW TABLES LIKE 'rst_payment_transactions'") != 'rst_payment_transactions') {
@@ -168,6 +182,11 @@ function rst_create_tables()
 
         //mysql_query($sql);
 		$wpdb->query($sql);
+		
+			$sqla = "ALTER TABLE rst_payment_transactions CONVERT TO CHARACTER SET utf8 COLLATE utf8_unicode_ci";
+		$wpdb->query($sqla);	
+
+		
     }	
 	
 	

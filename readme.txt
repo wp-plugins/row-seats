@@ -1,19 +1,21 @@
 === Plugin Name ===
 Plugin Name: Row Seats
-Plugin URI: http://www.rowseatsplugin.com/row-seats-plugin-information
-Author: gcwebsolutions
-Author URI: http://www.rowseatsplugin.com/row-seats-plugin-information
-Donate link: http://www.rowseatsplugin.com/row-seats-plugin-information
-Tags: row seats, booking seats, event booking, shows booking, event manager, booking events, sell seats, booking tickets, ticket booth, paypal booking
-Requires at least: 3.5.1
-Tested up to: 4.0
-Stable tag: 2.44
+Plugin URI: http://www.rowseatsplugin.com/
+Author: GC GROUP
+Author URI: http://www.rowseatsplugin.com/
+Tags: row seats, booking seats, seat bookings, event booking, shows booking, event manager, booking events, sell seats, booking tickets, ticket booth, paypal booking, table booking, book a table
+Requires at least:  3.5.1
+Tested up to: 4.2.1
+Stable tag: 2.54
 
 Booking seats is easier with Row Seats plugin. This is a new solution to the increasing request to sell seats.
 
 == Description ==
 
 Booking seats is easier with Row Seats plugin. This is a new solution to the increasing request to sell seats. It features shopping cart features, calendar backend function, csv file upload of your seat details. Just place the shortcode in a page or post and sell your show. For more more information or extra features and functions, you can visit <a href="http://www.rowseatsplugin.com/row-seats-plugin-information">plugin page</a>.
+
+[youtube https://www.youtube.com/watch?v=fawnsMKH21s]
+
 
 == Installation ==
 
@@ -55,6 +57,14 @@ c) Day view - same as week view above.
 
 Very important to first press "Save Settings" button, even if you have not filled out all the information fields. The shortcode will work in any page or post. You can obtain the shortcode after you upload your seating chart (CSV file).  Make sure that the shortcode starts with [showseats id=X] (X represents the id number).
 
+= What shortcodes are available for email templates? =
+
+You can go to our FAQ page to get the list of them http://www.rowseatsplugin.com/faq
+
+= My site is slow when Row Seats Core is activated, what can I do? =
+
+Row Seats top function is the ability to view and make live seat bookings.  This “live” feature requires constant ajax calls process and thus it spends the site server’s resources, specially the bandwith. See more of an explanation here http://www.rowseatsplugin.com/prerequisite
+
 == Screenshots ==
 
 1. screenshot-1.png
@@ -65,6 +75,25 @@ Very important to first press "Save Settings" button, even if you have not fille
 6. screenshot-6.png
 
 == Changelog ==
+
+= 2.54 =
+* Small bug fix for alignment settings
+
+= 2.52 =
+* Added shortcode for Venue in the email templates[venue].  It will display the venue information that you set in the Add Event calendar when creating the event.
+* Time display on seat chart (client side) is now shown according to the default time/date in WP Settings.
+* Can display UTF-8 ci characters (Russian) only for new installation. For prior installation contact us. 
+
+= 2.50 =
+* Apply filters for new module<a title="Row Seats Table module" href="http://www.rowseatsplugin.com/row-seats-table" target="_blank">Row Seats Table</a>
+* Clean up tags for General Admission module
+
+= 2.48 =
+* Apply filters for General Admission module to now read GA for ticket number instead of showing row/seat #
+
+= 2.46 =
+* Fixed small bug pertaining to General Admission module, having a fixed top position
+* Small bug fix for Printable Reports module, showing deprecation on some servers
 
 = 2.44 =
 * Added 60% zoom for large seat charts
